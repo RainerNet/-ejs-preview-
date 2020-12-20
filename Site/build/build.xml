@@ -95,3 +95,365 @@
             <echo message="Building a Development Environment..."/>
             <antcall target="-buildkit.dev"/>
         </then>
+
+        <elseif>
+            <equals arg1="${env}" arg2="test"/>
+            <then>
+                <!-- Build a test environment -->
+                <echo message="Building a Test Environment..."/>
+                <antcall target="-buildkit.test"/>
+            </then>
+        </elseif>
+
+        <else>
+            <!-- Build a production environment -->
+            <echo message="Building a Production Environment..."/>
+            <antcall target="-buildkit.production"/>
+        </else>
+    </if>
+    </target>
+
+
+    <target name="build">
+    <if>
+        <equals arg1="${env}" arg2="dev"/>
+        <then>
+            <!-- Build a dev environment -->
+            <echo message="Building a Development Environment..."/>
+            <antcall target="-build.dev" />
+        </then>
+
+        <elseif>
+            <equals arg1="${env}" arg2="test"/>
+            <then>
+                <!-- Build a test environment -->
+                <echo message="Building a Test Environment..."/>
+                <antcall target="-build.test" />
+            </then>
+        </elseif>
+
+        <else>
+            <!-- Build a production environment -->
+            <echo message="Building a Production Environment..."/>
+            <antcall target="-build.production" />
+        </else>
+    </if>
+    </target>
+
+
+    <target name="minify">
+    <if>
+        <equals arg1="${env}" arg2="dev"/>
+        <then>
+            <!-- Build a dev environment -->
+            <echo message="Building a Development Environment..."/>
+            <antcall target="-minify.dev"/>
+        </then>
+
+        <elseif>
+            <equals arg1="${env}" arg2="test"/>
+            <then>
+                <!-- Build a test environment -->
+                <echo message="Building a Test Environment..."/>
+                <antcall target="-minify.test"/>
+            </then>
+        </elseif>
+
+        <else>
+            <!-- Build a production environment -->
+            <echo message="Building a Production Environment..."/>
+            <antcall target="-minify.production"/>
+        </else>
+    </if>
+    </target>
+    
+    
+    <!--
+    *************************************************
+    * BUILD TARGETS                                 *
+    *************************************************
+    -->
+
+    <!-- Target: basics -->
+    <target name="-basics.dev"
+            depends="-rev,
+                     -clean,
+                     -copy"/>
+
+    <target name="-basics.test"
+            depends="-rev,
+                     -clean,
+                     -copy,
+                     -usemin,
+                     -js.all.minify,
+                     -js.main.concat,
+                     -js.mylibs.concat,
+                     -js.scripts.concat,
+                     -js.delete,
+                     -css,
+                     -html"/>
+
+    <target name="-basics.production"
+            depends="-rev,
+                     -clean,
+                     -copy,
+                     -usemin,
+                     -js.all.minify,
+                     -js.main.concat,
+                     -js.mylibs.concat,
+                     -js.scripts.concat,
+                     -js.delete,
+                     -strip-console.log,
+                     -css,
+                     -html"/>
+
+    <!-- Target: text -->
+    <target name="-text.dev"
+            depends="-rev,
+                     -clean,
+                     -copy"/>
+
+    <target name="-text.test"
+            depends="-rev,
+                     -clean,
+                     -copy,
+                     -usemin,
+                     -js.all.minify,
+                     -js.main.concat,
+                     -js.mylibs.concat,
+                     -js.scripts.concat,
+                     -js.delete,
+                     -css,
+                     -html,
+                     -htmlclean"/>
+
+    <target name="-text.production"
+            depends="-rev,
+                     -clean,
+                     -copy,
+                     -usemin,
+                     -js.all.minify,
+                     -js.main.concat,
+                     -js.mylibs.concat,
+                     -js.scripts.concat,
+                     -js.delete,
+                     -strip-console.log,
+                     -css,
+                     -html,
+                     -htmlclean"/>
+
+    <!-- Target: buildkit -->
+    <target name="-buildkit.dev"
+            depends="-rev,
+                     -clean,
+                     -prodcopy,
+                     -imagespng,
+                     -imagesjpg"/>
+
+    <target name="-buildkit.test"
+            depends="-rev,
+                     -clean,
+                     -prodcopy,
+                     -usemin,
+                     -js.all.minify,
+                     -js.main.concat,
+                     -js.mylibs.concat,
+                     -js.scripts.concat,
+                     -js.delete,
+                     -css,
+                     -html,
+                     -htmlbuildkit,
+                     -imagespng,
+                     -imagesjpg"/>
+
+    <target name="-buildkit.production"
+            depends="-rev,
+                     -clean,
+                     -prodcopy,
+                     -usemin,
+                     -js.all.minify,
+                     -js.main.concat,
+                     -js.mylibs.concat,
+                     -js.scripts.concat,
+                     -js.delete,
+                     -strip-console.log,
+                     -css,
+                     -html,
+                     -htmlbuildkit,
+                     -imagespng,
+                     -imagesjpg"/>
+
+    <!-- Target: build -->
+    <target name="-build.dev"
+            depends="-rev,
+                     -clean,
+                     -prodcopy,
+                     -imagespng,
+                     -imagesjpg"/>
+
+    <target name="-build.test"
+            depends="-rev,
+                     -clean,
+                     -prodcopy,
+                     -usemin,
+                     -js.all.minify,
+                     -js.main.concat,
+                     -js.mylibs.concat,
+                     -js.scripts.concat,
+                     -js.delete,
+                     -css,
+                     -html,
+                     -htmlclean,
+                     -imagespng,
+                     -imagesjpg"/>
+
+    <target name="-build.production"
+            depends="-rev,
+                     -clean,
+                     -prodcopy,
+                     -usemin,
+                     -js.all.minify,
+                     -js.main.concat,
+                     -js.mylibs.concat,
+                     -js.scripts.concat,
+                     -js.delete,
+                     -strip-console.log,
+                     -css,
+                     -html,
+                     -htmlclean,
+                     -imagespng,
+                     -imagesjpg"/>
+
+    <!-- Target: minify -->
+    <target name="-minify.dev"
+            depends="-rev,
+                     -clean,
+                     -prodcopy,
+                     -imagespng,
+                     -imagesjpg"/>
+
+    <target name="-minify.test"
+            depends="-rev,
+                     -clean,
+                     -prodcopy,
+                     -usemin,
+                     -js.all.minify,
+                     -js.main.concat,
+                     -js.mylibs.concat,
+                     -js.scripts.concat,
+                     -js.delete,
+                     -css,
+                     -html,
+                     -htmlcompress,
+                     -imagespng,
+                     -imagesjpg"/>
+
+    <target name="-minify.production"
+            depends="-rev,
+                     -clean,
+                     -prodcopy,
+                     -usemin,
+                     -js.all.minify,
+                     -js.main.concat,
+                     -js.mylibs.concat,
+                     -js.scripts.concat,
+                     -js.delete,
+                     -strip-console.log,
+                     -css,
+                     -html,
+                     -htmlcompress,
+                     -imagespng,
+                     -imagesjpg"/>
+
+    <!--
+    *************************************************
+    * FUNCTION TARGETS                              *
+    *************************************************
+    -->
+    <target name="-load-build-info" description="(PRIVATE) Loads the build versioning information">
+        <property file="./${dir.build}/config/${build.version.info}"/>
+    </target>
+    
+    <target name="-clean" description="(PRIVATE) Wipe the previous build (Deletes the dir.publish directory">
+    <!-- This is a private target -->
+    
+        <echo message="Cleaning up previous build directory..."/>
+        <delete dir="./${dir.publish}/"/>
+    </target>
+    
+    
+    <target name="-rev" description="(PRIVATE) Increase the current build number by one and set build date">
+    <!-- This is a private target -->
+    
+        <echo message="====================================================================="/>
+        <echo message="Welcome to the HTML5 Boilerplate Build Script!"/>
+        <echo message=" "/>
+        <echo message="We're going to get your site all ship-shape and ready for prime time."/>
+        <echo message=" "/>
+        <echo message="This should take somewhere between 15 seconds and a few minutes,"/>
+        <echo message="mostly depending on how many images we're going to compress."/>
+        <echo message=" "/>
+        <echo message="Feel free to come back or stay here and follow along."/>
+        <echo message="====================================================================="/>
+        <echo message=" "/>
+        <echo message=" "/>
+    
+    
+        <echo message="Increasing the build number..."/>
+        <propertyfile file="./${dir.build}/config/${build.version.info}" comment="Build Information File - DO NOT CHANGE">
+            <entry key="build.number" type="int" default="0000" operation="+" pattern="0000"/>
+            <entry key="build.date" type="date" value="now" pattern="dd.MM.yyyy HH:mm"/>
+        </propertyfile>
+        <property file="./${dir.build}/config/${build.version.info}"/>
+        <echo>Creating build ${build.number}</echo>
+    </target>
+    
+    
+    <target name="current-number" depends="-load-build-info" description="(PUBLIC) Returns the current build number">
+        <echo>Current build number: ${build.number}</echo>
+    </target>
+    
+    
+    <target name="-copy" depends="-load-build-info">
+    <!-- This is a private target -->
+    
+        <echo message="Copying over new files..."/>
+        <!-- combine the 2 exclude properties -->
+        <var name="excluded-files" value="${file.default.exclude}, ${file.exclude}"/>
+
+        <copy todir="./${dir.publish}">
+            <fileset dir="${dir.source}/" excludes="${excluded-files}"/>
+        </copy> 
+        
+        <echo message="A copy of all non-dev files are now in: ./${dir.publish}."/>
+    </target>
+	
+    <target name="-prodcopy" depends="-load-build-info">
+    <!-- This is a private target -->
+    
+        <echo message="Copying over new files..."/>
+        <!-- combine the 2 exclude properties -->
+        <var name="prod-excluded-files" value="${file.default.exclude}, ${file.jpg.exclude}, ${file.exclude}"/>
+
+        <copy todir="./${dir.publish}">
+            <fileset dir="${dir.source}/" excludes="${prod-excluded-files}"/>
+        </copy> 
+        
+        <echo message="A copy of all non-dev files are now in: ./${dir.publish}."/>
+    </target>
+    
+    
+    <!-- JAVASCRIPT -->
+    <target name="-js.main.concat" depends="-load-build-info" description="(PRIVATE) Concatenates the JS files in dir.js">
+        <echo message="Concatenating Main JS scripts..."/>
+        <concat destfile="./${dir.publish}/${dir.js}/scripts-${build.number}.js">
+            <fileset dir="./${dir.publish}/">
+                <include name="**/${dir.js.main}/*.min.js"/>
+                <exclude name="**/${dir.js.mylibs}/*.js"/>
+                <exclude name="**/${dir.js.libs}/*.js"/>
+            </fileset>      
+        </concat>
+    </target>
+    
+    
+    <target name="-js.mylibs.concat" depends="-load-build-info" description="(PRIVATE) Concatenates the JS files in dir.js.mylibs">
