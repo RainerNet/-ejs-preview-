@@ -12,4 +12,11 @@
 	
 <!-- Least restrictive policy: -->
 <!--
-	<site-control permitted-cross-domain-p
+	<site-control permitted-cross-domain-policies="all"/>
+	<allow-access-from domain="*" to-ports="*" secure="false"/>
+	<allow-http-request-headers-from domain="*" headers="*" secure="false"/>
+-->
+<!--
+  If you host a crossdomain.xml file with allow-access-from domain=“*” 	 	
+  and don’t understand all of the points described here, you probably 	 	
+  ha
