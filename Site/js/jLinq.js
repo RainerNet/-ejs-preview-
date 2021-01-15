@@ -1150,3 +1150,185 @@ var jl;
                 });
                 return jLinq.from(results);
             }},
+            
+        //returns if a collection contains any records
+        { name:"any", type:framework.command.select,
+            method:function() {
+                return this.records.length > 0;
+            }},
+            
+        //returns if no records matched this query
+        { name:"none", type:framework.command.select,
+            method:function() {
+                return this.records.length == 0;
+            }},
+            
+        //returns if all records matched the query
+        { name:"all", type:framework.command.select,
+            method:function() {
+                return this.removed.length == 0;
+            }},
+                
+        //returns the first record found or the fallback value if nothing was found
+        { name:"first", type:framework.command.select,
+            method:function(fallback) {
+                var record = jLinq.util.elementAt(this.records, 0);
+                return record == null ? fallback : record;
+            }},
+            
+        //returns the last record found or the fallback value if nothing was found
+        { name:"last", type:framework.command.select,
+            method:function(fallback) {
+                var record = jLinq.util.elementAt(this.records, this.records.length - 1);
+                return record == null ? fallback : record;
+            }},
+            
+        //returns the record at the provided index or the fallback value if nothing was found
+        { name:"at", type:framework.command.select,
+            method:function(index, fallback) {
+                var record = jLinq.util.elementAt(this.records, index);
+                return record == null ? fallback : record;
+            }},
+                    
+        //returns the remaining count of records
+        { name:"count", type:framework.command.select,
+            method:function() {
+                return this.records.length;
+            }},
+            
+        //selects the remaining records
+        { name:"removed", type:framework.command.select,
+            method:function(selection) {
+                return this.when(selection, {
+                    method:function() { return jLinq.util.select(this.removed, selection); },
+                    object:function() { return jLinq.util.select(this.removed, selection); },
+                    other:function() { return this.removed; }
+                });
+            }},
+            
+        //performs a manual comparison of records
+        { name:"where", type:framework.command.select, 
+            method:function(compare) {
+                
+                //filter the selection
+                var state = this;
+                var matches = [];
+                jLinq.util.each(this.records, function(record) {
+                    if (compare.apply(state, [record]) === true) { matches.push(record); }
+                });
+                
+                //create a new query with matching arguments
+                var query = jLinq.from(matches);
+                if (!this.ignoreCase) { query.useCase(); }
+                return query;
+            }}
+            
+        ]);
+    
+    //set the public object
+    jLinq = {
+    
+        //determines if new queries should always be
+        //cloned to prevent accidental changes to objects
+        alwaysClone:false,
+        
+        //sets the default for jLinq query case checking
+        ignoreCase:true,
+    
+        //command types (select, query, action)
+        command:framework.command,
+        
+        //types of object and values
+        type:framework.type,
+        
+        //allows command to be added to the library
+        extend:function() { framework.library.extend.apply(null, arguments); },
+        
+        //core function to start and entirely new query
+        query:function(collection, params) { 
+            return library.framework.query(collection, params); 
+        },
+        
+        //starts a new query with the array provided
+        from:function(collection) { 
+            return framework.library.query(collection, { clone:false });
+        },
+        
+        //returns a list of commands in the library
+        getCommands:function() {
+            return framework.util.grab(framework.library.commands, function(command) {
+                return {
+                    name:command.name,
+                    typeId:command.type,
+                    type:command.type == framework.command.select ? "select"
+                        : command.type == framework.command.query ? "query"
+                        : command.type == framework.command.action ? "action"
+                        : "unknown"
+                };
+            });
+        },
+        
+        //helper functions for jLinq
+        util:{
+        
+            //removes leading and trailing spaces
+            trim:framework.util.trim,
+        
+            //loops and finds a value in an object from a path
+            findValue:framework.util.findValue,
+        
+            //gets an element at the specified index (if any)
+            elementAt:framework.util.elementAt,
+        
+            //returns a regex safe version of a string
+            regexEscape:framework.util.regexEscape,
+            
+            //compares an expression to another string
+            regexMatch:framework.util.regexMatch,
+        
+            //compares equality of two objects
+            equals:framework.util.equals,
+            
+            //gets groups for a collection
+            group:framework.util.group,
+            
+            //updates the order of a collection
+            reorder:framework.util.reorder,
+            
+            //performs a function when a value matches a type
+            when:framework.util.when,
+            
+            //converts an object to an array of values
+            toArray:framework.util.toArray,
+            
+            //loops for each record in a set
+            each:framework.util.each,
+            
+            //grabs a collection of items
+            grab:framework.util.grab,
+            
+            //loops records until one returns true or the end is reached
+            until:framework.util.until,
+            
+            //returns if an object is the provided type
+            isType:framework.util.isType,
+            
+            //determines the matching type for a value
+            getType:framework.util.getType,
+            
+            //applies each source property to the target
+            apply:framework.util.apply,
+            
+            //uses the action to select items from a collection
+            select:framework.util.select,
+            
+            //grabs records for a specific range
+            skipTake:framework.util.skipTake
+            
+        }
+    };
+    
+    //set the other aliases
+    jlinq = jLinq;
+    jl = jLinq;
+})();
