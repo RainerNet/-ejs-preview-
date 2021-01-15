@@ -449,3 +449,364 @@ var jl;
                     return clone;
                 }
                 //all other types just return the value
+                else {
+                    return obj;
+                }
+            },
+        
+            //creates an invocation handler for a field
+            //name instead of grabbing values
+            invoke:function(obj, args) {
+                //copy the array to avoid breaking any other calls
+                args = args.concat();
+                
+                //start by getting the path
+                var path = args[0];
+                
+                //find the method and extract the arguments
+                var method = framework.util.findValue(obj, path);
+                args = framework.util.select(args, null, 1, null);
+                
+                //if we are invoking a method that hangs off
+                //another object then we need to find the value
+                path = path.replace(/\..*$/, "");
+                var parent = framework.util.findValue(obj, path);
+                obj = parent === method ? obj : parent;
+                
+                //return the result of the call
+                try {
+                    var result = method.apply(obj, args);
+                    return result;
+                }
+                catch (e) {
+                    return null;
+                }
+                
+            },
+        
+            //gets a path from a field name
+            getPath:function(path) {
+                return framework.util.toString(path).split(framework.exp.get_path);
+            },
+        
+            //searches an object to find a value
+            findValue:function(obj, path) {
+            
+                //start by checking if this is actualy an attempt to 
+                //invoke a value on this property
+                if (framework.util.isType(framework.type.array, path)) {
+                    return framework.util.invoke(obj, path);
+                    
+                }
+                //if this referring to a field
+                else if (framework.util.isType(framework.type.string, path)) {
+
+                    //get each part of the path
+                    path = framework.util.getPath(path);
+
+                    //search for the record
+                    var index = 0;
+                    while(obj != null && index < path.length) {
+                        obj = obj[path[index++]];
+                    }
+                    
+                    //return the final found object
+                    return obj;
+                    
+                }
+                //nothing that can be read, just return the value
+                else {
+                    return obj;
+                }
+                
+            },
+        
+            //returns the value at the provided index
+            elementAt:function(collection, index) {
+                return collection && collection.length > 0 && index < collection.length && index >= 0 
+                    ? collection[index]
+                    : null;
+            },
+        
+            //makes a string save for regular expression searching
+            regexEscape:function(val) {
+                return (val ? val : "").toString().replace(framework.exp.escape_regex, "\\$&");
+            },
+            
+            //matches expressions to a value
+            regexMatch:function(expression, source, ignoreCase) {
+            
+                //get the string value if needed
+                if (framework.util.isType(framework.type.regex, expression)) {
+                    expression = expression.source;
+                }
+            
+                //create the actual expression and match
+                expression = new RegExp(framework.util.toString(expression), ignoreCase ? "gi" : "g");
+                return framework.util.toString(source).match(expression) != null;
+            },
+        
+            //converts a command to an operator name
+            operatorName:function(name) {
+                return name.replace(/^\w/, function(match) { return match.toUpperCase(); });
+            },
+        
+            //changes a value based on the type
+            compare:function(value, types, state) {
+                var result = framework.util.when(value, types, state);
+                return result == true ? result : false;
+            },
+            
+            //performs the correct action depending on the type
+            when:function(value, types, state) {
+
+                //get the kind of object this is
+                var kind = framework.util.getType(value);
+                
+                //check each of the types
+                for (var item in types) {
+                    if (!types.hasOwnProperty(item)) continue;
+                    var type = framework.type[item];
+                    if (type == kind) { 
+                        return types[item].apply(state, [value]); 
+                    }
+                }
+                
+                //if there is a fallback comparison
+                if (types.other) { return types.other.apply(state, [value]); }
+                
+                //no matches were found
+                return null;
+            },
+        
+            //performs an action on each item in a collection
+            each:function(collection, action) {
+                var index = 0;
+                for(var item in collection){
+                    if (collection.hasOwnProperty(item)) action(collection[item], index++);
+                }
+            },
+            
+            //performs an action to each item in a collection and then returns the items
+            grab:function(collection, action) {
+                var list = [];
+                framework.util.each(collection, function(item) {
+                    list.push(action(item));
+                });
+                return list;
+            },
+            
+            //performs an action on each item in a collection
+            until:function(collection, action) {
+                for(var item = 0, l = collection.length; item < l; item++) {
+                    var result = action(collection[item], item + 1);
+                    if (result === true) { return true; }
+                }
+                return false;
+            },
+        
+            //checks if the types match
+            isType:function(type, value) {
+                return framework.util.getType(value) == type;
+            },
+            
+            //finds the type for an object
+            getType:function(obj) {
+            
+                //check if this even has a value
+                if (obj == null) { return framework.type.nothing; }
+                
+                //check each type except object
+                for (var item in framework.library.types) {
+                    if (framework.library.types[item](obj)) { return item; }
+                }
+                
+                //no matching type was found
+                return framework.type.object;
+            },
+            
+            //grabs remaining elements from and array
+            remaining:function(array, at) {
+                var results = [];
+                for(; at < array.length; at++) results.push(array[at]);
+                return results;
+            },
+            
+            //append items onto a target object
+            apply:function(target, source) {
+                for(var item in source) {
+                    if (source.hasOwnProperty(item)) target[item] = source[item];
+                }
+                return target;
+            },
+            
+            //performs sorting on a collection of records
+            reorder:function(collection, fields, ignoreCase) {
+
+                //reverses the fields so that they are organized
+                //in the correct order
+                return framework.util._performSort(collection, fields, ignoreCase);
+            },
+            
+            //handles actual work of reordering (call reorder)
+            _performSort:function(collection, fields, ignoreCase) {
+            
+                //get the next field to use
+                var field = fields.splice(0, 1);
+                if (field.length == 0) { return collection; }
+                field = field[0];
+                
+                //get the name of the field and descending or not
+                var invoked = framework.util.isType(framework.type.array, field);
+                var name = (invoked ? field[0] : field);
+                var desc = name.match(/^\-/);
+                name = desc ? name.substr(1) : name;
+                
+                //updat the name if needed
+                if (desc) { 
+                    if (invoked) { field[0] = name; } else { field = name; }
+                }
+                
+                //IE sorting bug resolved (Thanks @rizil)
+                //http://webcache.googleusercontent.com/search?q=cache:www.zachleat.com/web/2010/02/24/array-sort/+zach+array+sort
+                
+                //create the sorting method for this field
+                var sort = function(val1, val2) {
+                
+                    //find the values to compare
+                    var a = framework.util.findValue(val1, field);
+                    var b = framework.util.findValue(val2, field);
+                    
+                    //default to something when null
+                    if (a == null && b == null) { a = 0; b = 0; }
+                    else if (a == null && b != null) { a = 0; b = 1; }
+                    else if (a != null && b == null) { a = 1; b = 0; }
+                    
+                    //check for string values
+                    else if (ignoreCase && 
+                        framework.util.isType(framework.type.string, a) && 
+                        framework.util.isType(framework.type.string, b)) {
+                        a = a.toLowerCase();
+                        b = b.toLowerCase();
+                    }
+                    //if there is a length attribute use it instead
+                    else if (a.length && b.length) {
+                        a = a.length;
+                        b = b.length;
+                    }
+                    
+                    //perform the sorting
+                    var result = (a < b) ? -1 : (a > b) ? 1 : 0;
+                    return desc ? -result : result;
+                
+                };
+                
+                //then perform the sorting
+                collection.sort(sort);
+                
+                //check for sub groups if required
+                if (fields.length > 0) {
+                
+                    //create the container for the results
+                    var sorted = [];
+                    var groups = framework.util.group(collection, field, ignoreCase);
+                    framework.util.each(groups, function(group) {
+                        var listing = fields.slice();
+                        var records = framework.util._performSort(group, listing, ignoreCase);
+                        sorted = sorted.concat(records);
+                    });
+                    
+                    //update the main collection
+                    collection = sorted;
+                }
+                
+                //the final results
+                return collection;
+            },
+            
+            //returns groups of unique field values
+            group:function(records, field, ignoreCase) {
+            
+                //create a container to track group names
+                var groups = {};
+                for(var item = 0, l = records.length; item < l; item++) {
+                    //get the values
+                    var record = records[item];
+                    var alias = framework.util.toString(framework.util.findValue(record, field));
+                    alias = ignoreCase ? alias.toUpperCase() : alias;
+
+                    //check for existing values
+                    if (!groups[alias]) { 
+                        groups[alias] = [record]; 
+                    }
+                    else {
+                        groups[alias].push(record);
+                    }
+                    
+                }
+                
+                //return the matches
+                return groups;
+            
+            },
+            
+            //compares two values for equality
+            equals:function(val1, val2, ignoreCase) {
+                return framework.util.when(val1, {
+                    string:function() {
+                        return framework.util.regexMatch(
+                            "^"+framework.util.regexEscape(val2)+"$", 
+                            val1, 
+                            ignoreCase); 
+                    },
+                    other:function() { return (val1 == null && val2 == null) || (val1 === val2); }
+                });
+            },
+            
+            //converts an object to an array of elements
+            toArray:function(obj) {
+                var items = [];
+                if (obj.length) {
+                    for (var i = 0; i < obj.length; i++) { items.push(obj[i]); }
+                }
+                else {
+                    for (var item in obj) {
+                        if (obj.hasOwnProperty(item)) items.push(obj[item]);
+                    }
+                }
+                return items;
+            },
+            
+            //converts a value into a string
+            toString:function(val) {
+                return val == null ? "" : val.toString();
+            },
+            
+            //grabs a range of records from a collection
+            skipTake:function(collection, action, skip, take) {
+            
+                //set the defaults
+                skip = skip == null ? 0 : skip;
+                take = take == null ? collection.length : take;
+                
+                //check if this will return any records
+                if (skip >= collection.length || 
+                    take == 0) {
+                    return []; 
+                }
+            
+                //return the results
+                return framework.util.select(collection, action, skip, skip + take);
+            },
+            
+            //grabs a range and format for records
+            select:function(collection, action, start, end) {
+
+                //grab the records if there is a range
+                start = start == null ? 0 : start;
+                end = end == null ? collection.length : end;
+                
+                //slice the records
+                var results = collection.slice(start, end);
+                
+                //check if this is a mapping method
