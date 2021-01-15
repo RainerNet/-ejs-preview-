@@ -810,3 +810,343 @@ var jl;
                 var results = collection.slice(start, end);
                 
                 //check if this is a mapping method
+                if (jLinq.util.isType(jLinq.type.object, action)) {
+                    var map = action;
+                    action = function(rec) {
+                        
+                        //map existing values or defaults
+                        // TODO: tests do not cover this method!
+                        var create = {};
+                        for (var item in map) {
+                            if (!map.hasOwnProperty(item)) continue;
+                            create[item] = rec[item]
+                                ? rec[item]
+                                : map[item];
+                        }
+                        
+                        //return the created record
+                        return create;
+                    
+                    };
+                };
+                
+                //if there is a selection method, use it
+                if (jLinq.util.isType(jLinq.type.method, action)) {
+                    for (var i = 0; i < results.length; i++) {
+                        var record = results[i];
+                        results[i] = action.apply(record, [record]);
+                    }
+                }
+                
+                //return the final set of records
+                return results;
+            }
+            
+        }
+    
+    };
+    
+    //default types
+    framework.library.addType(framework.type.nothing, function(value) { return value == null; });
+    framework.library.addType(framework.type.array, function(value) { return value instanceof Array; });
+    framework.library.addType(framework.type.string, function(value) { return value.substr && value.toLowerCase; });
+    framework.library.addType(framework.type.number, function(value) { return value.toFixed && value.toExponential; });
+    framework.library.addType(framework.type.regex, function(value) { return value instanceof RegExp; });
+    framework.library.addType(framework.type.bool, function(value) { return value == true || value == false; });
+    framework.library.addType(framework.type.method, function(value) { return value instanceof Function; });
+    framework.library.addType(framework.type.datetime, function(value) { return value instanceof Date; });
+    
+    //add the default methods
+    framework.library.extend([
+    
+        //sets a query to ignore case
+        { name:"ignoreCase", type:framework.command.action, 
+            method:function() {
+                this.ignoreCase = true;
+            }},
+            
+        //reverses the current set of records
+        { name:"reverse", type:framework.command.action, 
+            method:function() {
+                this.records.reverse();
+            }},
+            
+        //sets a query to evaluate case
+        { name:"useCase", type:framework.command.action, 
+            method:function() {
+                this.ignoreCase = false;
+            }},
+            
+        //performs an action for each record
+        { name:"each", type:framework.command.action,
+            method:function(action) {
+                jLinq.util.each(this.records, function(record) { action(record); });
+            }},
+            
+        //attaches a value or result of a method to each record
+        { name:"attach", type:framework.command.action,
+            method:function(field, action) {
+                this.when(action, {
+                    method:function() { jLinq.util.each(this.records, function(record) { record[field] = action(record); }); },
+                    other:function() { jLinq.util.each(this.records, function(record) { record[field] = action; }); }
+                });
+            }},
+            
+        //joins two sets of records by the key information provided
+        { name:"join", type:framework.command.action,
+            method:function(source, alias, pk, fk) {
+                jLinq.util.each(this.records, function(record) {
+                    record[alias] = jLinq.from(source).equals(fk, record[pk]).select();
+                });
+            }},
+            
+        //joins a second array but uses only the first matched record. Allows for a default for a fallback value
+        { name:"assign", type:framework.command.action,
+            method:function(source, alias, pk, fk, fallback) {
+                jLinq.util.each(this.records, function(record) {
+                    record[alias] = jLinq.from(source).equals(fk, record[pk]).first(fallback);
+                });
+            }},
+            
+        //joins two sets of records by the key information provided
+        { name:"sort", type:framework.command.action,
+            method:function() {
+                var args = jLinq.util.toArray(arguments);
+                this.records = jLinq.util.reorder(this.records, args, this.ignoreCase);
+            }},
+    
+        //are the two values the same
+        { name:"equals", type:framework.command.query, 
+            method:function(value) {
+                return jLinq.util.equals(this.value, value, this.ignoreCase);
+            }},
+            
+        //does this start with a value
+        { name:"starts", type:framework.command.query, 
+            method:function(value) {
+                return this.compare({
+                    array:function() { return jLinq.util.equals(this.value[0], value, this.ignoreCase); },
+                    other:function() { return jLinq.util.regexMatch(("^"+jLinq.util.regexEscape(value)), this.value, this.ignoreCase); }
+                });
+            }},
+            
+        //does this start with a value
+        { name:"ends", type:framework.command.query, 
+            method:function(value) {
+                return this.compare({
+                    array:function() { return jLinq.util.equals(this.value[this.value.length - 1], value, this.ignoreCase); },
+                    other:function() { return jLinq.util.regexMatch((jLinq.util.regexEscape(value)+"$"), this.value, this.ignoreCase); }
+                });
+            }},
+            
+        //does this start with a value
+        { name:"contains", type:framework.command.query, 
+            method:function(value) {
+                return this.compare({
+                    array:function() { 
+                        var ignoreCase = this.ignoreCase;
+                        return jLinq.util.until(this.value, function(item) { return jLinq.util.equals(item, value, ignoreCase); }); 
+                    },
+                    other:function() { return jLinq.util.regexMatch(jLinq.util.regexEscape(value), this.value, this.ignoreCase); }
+                });
+            }},
+            
+        //does this start with a value
+        { name:"match", type:framework.command.query, 
+            method:function(value) {
+                return this.compare({
+                    array:function() { 
+                        var ignoreCase = this.ignoreCase;
+                        return jLinq.util.until(this.value, function(item) { return jLinq.util.regexMatch(value, item, ignoreCase); }); 
+                    },
+                    other:function() { return jLinq.util.regexMatch(value, this.value, this.ignoreCase); }
+                });
+            }},
+            
+        //checks if the value matches the type provided
+        { name:"type", type:framework.command.query, 
+            method:function(type) {
+                return jLinq.util.isType(type, this.value);
+            }},
+            
+        //is the value greater than the argument
+        { name:"greater", type:framework.command.query, 
+            method:function(value) {
+                return this.compare({
+                    array:function() { return this.value.length > value; },
+                    string:function() { return this.value.length > value; },
+                    other:function() { return this.value > value; }
+                });
+            }},
+            
+        //is the value greater than or equal to the argument
+        { name:"greaterEquals", type:framework.command.query, 
+            method:function(value) {
+                return this.compare({
+                    array:function() { return this.value.length >= value; },
+                    string:function() { return this.value.length >= value; },
+                    other:function() { return this.value >= value; }
+                });
+            }},
+            
+        //is the value less than the argument
+        { name:"less", type:framework.command.query, 
+            method:function(value) {
+                return this.compare({
+                    array:function() { return this.value.length < value; },
+                    string:function() { return this.value.length < value; },
+                    other:function() { return this.value < value; }
+                });
+            }},
+            
+        //is the value less than or equal to the argument
+        { name:"lessEquals", type:framework.command.query, 
+            method:function(value) {
+                return this.compare({
+                    array:function() { return this.value.length <= value; },
+                    string:function() { return this.value.length <= value; },
+                    other:function() { return this.value <= value; }
+                });
+            }},
+            
+        //is the value between the values provided
+        { name:"between", type:framework.command.query, 
+            method:function(low, high) {
+                return this.compare({
+                    array:function() { return this.value.length > low && this.value.length < high; },
+                    string:function() { return this.value.length > low && this.value.length < high; },
+                    other:function() { return this.value > low && this.value < high; }
+                });
+            }},
+            
+        //is the value between or equal to the values provided
+        { name:"betweenEquals", type:framework.command.query, 
+            method:function(low, high) {
+                return this.compare({
+                    array:function() { return this.value.length >= low && this.value.length <= high; },
+                    string:function() { return this.value.length >= low && this.value.length <= high; },
+                    other:function() { return this.value >= low && this.value <= high; }
+                });
+            }},
+            
+        //returns if a value is null or contains nothing
+        { name:"empty", type:framework.command.query, 
+            method:function() {
+                return this.compare({
+                    array:function() { return this.value.length == 0; },
+                    string:function() { return jLinq.util.trim(this.value).length == 0; },
+                    other:function() { return this.value == null; }
+                });
+            }},
+            
+        //returns if a value is true or exists
+        { name:"is", type:framework.command.query, 
+            method:function() {
+                return this.compare({
+                    bool:function() { return this.value === true; },
+                    other:function() { return this.value != null; }
+                });
+            }},
+        
+        //gets the smallest value from the collection
+        { name:"min", type:framework.command.select,
+            method:function(field) {
+                var matches = jLinq.util.reorder(this.records, [field], this.ignoreCase);
+                return jLinq.util.elementAt(matches, 0);
+            }},
+            
+        //gets the largest value from the collection
+        { name:"max", type:framework.command.select,
+            method:function(field) {
+                var matches = jLinq.util.reorder(this.records, [field], this.ignoreCase);
+                return jLinq.util.elementAt(matches, matches.length - 1);
+            }},
+            
+        //returns the sum of the values of the field
+        { name:"sum", type:framework.command.select,
+            method:function(field) {
+                var sum; 
+                jLinq.util.each(this.records, function(record) {
+                    var value = jLinq.util.findValue(record, field);
+                    sum = sum == null ? value : (sum + value);
+                });
+                return sum;
+            }},
+            
+        //returns the sum of the values of the field
+        { name:"average", type:framework.command.select,
+            method:function(field) {
+                var sum; 
+                jLinq.util.each(this.records, function(record) {
+                    var value = jLinq.util.findValue(record, field);
+                    sum = sum == null ? value : (sum + value);
+                });
+                return sum / this.records.length;
+            }},
+                
+        //skips the requested number of records
+        { name:"skip", type:framework.command.select,
+            method:function(skip, selection) {
+                this.records = this.when(selection, {
+                    method:function() { return jLinq.util.skipTake(this.records, selection, skip, null); },
+                    object:function() { return jLinq.util.skipTake(this.records, selection, skip, null); },
+                    other:function() { return jLinq.util.skipTake(this.records, null, skip, null); }
+                });
+                return this.query;
+            }},
+            
+        //takes the requested number of records
+        { name:"take", type:framework.command.select,
+            method:function(take, selection) {
+                return this.when(selection, {
+                    method:function() { return jLinq.util.skipTake(this.records, selection, null, take); },
+                    object:function() { return jLinq.util.skipTake(this.records, selection, null, take); },
+                    other:function() { return jLinq.util.skipTake(this.records, null, null, take); }
+                });
+            }},
+            
+        //skips and takes records
+        { name:"skipTake", type:framework.command.select,
+            method:function(skip, take, selection) {
+                return this.when(selection, {
+                    method:function() { return jLinq.util.skipTake(this.records, selection, skip, take); },
+                    object:function() { return jLinq.util.skipTake(this.records, selection, skip, take); },
+                    other:function() { return jLinq.util.skipTake(this.records, null, skip, take); }
+                });
+            }},
+            
+        //selects the remaining records
+        { name:"select", type:framework.command.select,
+            method:function(selection) {
+                return this.when(selection, {
+                    method:function() { return jLinq.util.select(this.records, selection); },
+                    object:function() { return jLinq.util.select(this.records, selection); },
+                    other:function() { return this.records; }
+                });
+            }},
+            
+        //selects all of the distinct values for a field
+        { name:"distinct", type:framework.command.select,
+            method:function(field) {
+                var groups = jLinq.util.group(this.records, field, this.ignoreCase);
+                return jLinq.util.grab(groups, function(record) {
+                    return jLinq.util.findValue(record[0], field);
+                });
+            }},
+            
+        //groups the values of a field by unique values
+        { name:"group", type:framework.command.select,
+            method:function(field) {
+                return jLinq.util.group(this.records, field, this.ignoreCase);
+            }},
+            
+        //selects records into a new format
+        { name:"define", type:framework.command.select,
+            method:function(selection) {
+                var results = this.when(selection, {
+                    method:function() { return jLinq.util.select(this.records, selection); },
+                    object:function() { return jLinq.util.select(this.records, selection); },
+                    other:function() { return this.records; }
+                });
+                return jLinq.from(results);
+            }},
