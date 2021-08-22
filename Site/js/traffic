@@ -1,0 +1,12 @@
+
+function Question(id, image, options)
+{
+id : id;
+image : image;
+options : options;
+}
+
+function Option(id, text)
+{
+id : id; 
+text : text; 
