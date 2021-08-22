@@ -10,3 +10,26 @@ function Option(id, text)
 {
 id : id; 
 text : text; 
+next : next;
+}
+
+
+HHH = {};
+///URL
+HHH.getQuestionUrl = "";
+
+
+//Object Methods
+
+HHH.NextQuestion = function(questionId){
+  //Get Question
+  $.getJSON(HHH.NextQuestionUrl, function(data){
+    //populate page element with question
+  });
+}
+
+HHH.GetData = function(){
+	$.ajax({
+		url: "http://izzycjohnston.com/gdihhh/php/cit_json.php",
+		dataType: "jsonp",
+		success: f
