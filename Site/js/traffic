@@ -32,4 +32,27 @@ HHH.GetData = function(){
 	$.ajax({
 		url: "http://izzycjohnston.com/gdihhh/php/cit_json.php",
 		dataType: "jsonp",
-		success: f
+		success: function(data){
+			console.log(data);
+		}
+		
+	})
+}
+
+HHH.GetData();
+
+//Page Utils
+
+HHH.MouseOverQuestion = function(){
+
+	$("#question").children("button").mouseover(function()
+	{
+		$(this).toggleClass("highlight");
+	});
+}
+
+HHH.MouseOverMenu = function(){
+
+	$(".heading").children("button").mouseover(function()
+	{
+		$(this).toggleClass("
