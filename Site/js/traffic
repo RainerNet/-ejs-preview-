@@ -55,4 +55,20 @@ HHH.MouseOverMenu = function(){
 
 	$(".heading").children("button").mouseover(function()
 	{
-		$(this).toggleClass("
+		$(this).toggleClass("menu-highlight");
+	});
+}
+
+HHH.Transition = function(){
+//Transition animation
+	$(".photo").fadeOut();
+	$(".photo").attr("src", "new url");
+	$(".photo").fadeIn();
+}
+
+
+HHH.PopulatePage = function(question){
+	$("#question").val(question.text);
+	for(i=0; i < question.options.length; i++)
+	{
+		$("#question").append("<option>"+ question.options[i] + "</o
