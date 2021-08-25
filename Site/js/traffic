@@ -71,4 +71,13 @@ HHH.PopulatePage = function(question){
 	$("#question").val(question.text);
 	for(i=0; i < question.options.length; i++)
 	{
-		$("#question").append("<option>"+ question.options[i] + "</o
+		$("#question").append("<option>"+ question.options[i] + "</option>");
+	}
+}
+
+
+
+
+
+
+
