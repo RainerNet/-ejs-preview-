@@ -45,4 +45,25 @@ HHH.MouseOverQuestion = function(){
 
 HHH.MouseOverMenu = function(){
 
-	$(".heading").children("button").mouseove
+	$(".heading").children("button").mouseover(function()
+	{
+		$(this).toggleClass("menu-highlight");
+	});
+}
+
+HHH.Transition = function(){
+//Transition animation
+	$(".photo").fadeOut();
+	$(".photo").attr("src", "new url");
+	$(".photo").fadeIn();
+}
+
+
+HHH.PopulatePage = function(questionID){
+	HHH.LoadQuestion(questionID);
+	HHH.LoadOptions(questionID);
+	HHH.LoadFact(questionID);
+}
+
+
+HHH.LoadQuestion = fu
