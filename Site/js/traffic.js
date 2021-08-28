@@ -84,4 +84,16 @@ HHH.LoadOptions = function(questionID){
 }
 
 HHH.LoadFact = function(questionID){
-	var fact
+	var fact = jlinq.from(HHH.Data.facts)
+	.equals("fact_question", questionID)
+	.select();
+	$(".inside").children("p").val(fact.anecdote);
+}
+
+//Google Analytics tracking
+var _gaq = _gaq || [];
+ _gaq.push(['_setAccount', 'UA-19096645-3']);
+ _gaq.push(['_trackPageview']);
+
+ (function() {
+   var ga = document.createElement('script'); ga.type = 'text/javascript
