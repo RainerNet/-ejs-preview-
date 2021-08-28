@@ -74,4 +74,14 @@ HHH.LoadQuestion = function(questionID){
 }
 
 HHH.LoadOptions = function(questionID){
-	var options = jlinq.from(HHH.Data.op
+	var options = jlinq.from(HHH.Data.options)
+	.equals("option_question", questionID)
+	.select();
+	for(i=0; i < options.length; i++)
+	{
+		$(".options").append('<div id="opt_'+ option.option_next_question + 'class="button" onclick="HHH.OptionClick"><span>' option.name + '</span> <br />' + option.about + '</div>' );
+	}
+}
+
+HHH.LoadFact = function(questionID){
+	var fact
