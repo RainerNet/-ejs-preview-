@@ -66,4 +66,12 @@ HHH.PopulatePage = function(questionID){
 }
 
 
-HHH.LoadQuestion = fu
+HHH.LoadQuestion = function(questionID){
+	var question = jlinq.from(HHH.Data.questions)
+	.equals("ID", questionID)
+	.select();
+	$("#question").val('<div class="inside clearfix"><p class="large heading">' + question.question_heading + "</p><p>" + question.content + "</p></div>");
+}
+
+HHH.LoadOptions = function(questionID){
+	var options = jlinq.from(HHH.Data.op
