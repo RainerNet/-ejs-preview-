@@ -133,3 +133,47 @@ header #user{ width: 33%; float: left; text-align: right;  }
 #question p{ margin-left: 2%; }
 #question .large{ font-size: 2em;  margin-top: 15px; margin-bottom: 20px; }
 #question .options{ position:absolute; bottom: 0; width: 100%; margin: 0 0px 20px -10px;}
+
+/* Fact */
+#fact{ background: #fff; clear: both; margin-top: 15px; padding-top: 10px; }
+#fact .inside{ margin: 0 20px; }
+#fact h2{ color: #D4145A; line-height: 60px; }
+#fact img{ max-width: 33%; margin-left: 1%; float: right;}
+
+
+
+/* 	Footer
+---------------------------------------------------------------------------------------------------------------------------------------------------- */
+footer{ background: url(../images/base.jpg) bottom center; margin: 0 -100px; min-height: 700px; margin-top: 45px; padding-top: 15px; text-align: center; color: #ccc; }
+footer small{ display: none; }
+
+
+
+/* 	LATE NIGHT CHANGES
+---------------------------------------------------------------------------------------------------------------------------------------------------- */
+header{ background: #000; color: #FBB03B; height: 60px; line-height: 60px; font-size: 2em;  }
+header nav ul { font: .5em/60px georgia !important;}
+
+/* 	Misc Classes
+///////////////////////////////////////////////////////////////////////////////////////////////////////*/
+.hide       { display: none; }
+.quiet      { color: #666; }
+.loud       { color: #000; }
+.highlight  { background:#ff0; }
+.caps     	{ text-transform: uppercase; font-size: .9em; letter-spacing:1px;}
+.amp		{ font-family: Baskerville,"Palatino Linotype", Palatino, serif; font-style: italic;}
+.num		{ font: .8em Georgia;}
+
+.ir 		{ display: block; text-indent: -999em; overflow: hidden; background-repeat: no-repeat; text-align: left; direction: ltr; }
+.inner 		{ margin: 10px; }
+.first     	{ margin-left:0; padding-left:0; }
+.last      	{ margin-right:0 !important; padding-right:0; }
+.top       	{ margin-top:0; padding-top:0; }
+.bottom    	{ margin-bottom:0; padding-bottom:0; }
+.left		{ float: left; }
+.right		{ float: right; }
+
+.CTA{ background: #F9E9C7; margin: 0px 0 10px; display: block; height: 24px; line-height: 24px; text-indent: 8px; font-style: italic; text-transform: lowercase; color: #DF851B; font-weight: normal  }
+.CTA:before{ content: ""; background: #F9E9C7; border-left: 8px solid #fff;  border-top: 12px solid transparent;  border-bottom: 12px solid transparent; height: 0px; display: block; width: 0px; float: left;  }
+.CTA:after{  content: ""; background: #fff; border-left: 12px solid #F9E9C7; border-top: 12px solid transparent;  border-bottom: 12px solid transparent; height: 0px; display: block; width: 0px; float: right;  }
+.CTA:hover{ color: #333; }
