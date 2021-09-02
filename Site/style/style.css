@@ -5,4 +5,7 @@
 /*  HTML5 Block */	article, aside, audio, canvas, command, datalist, details, embed, figcaption, figure, footer, header, hgroup, keygen, meter, nav, output, progress, section, source, video{ display: block; }
 /*  HTML5 Inline*/	mark, rp, rt, ruby, summary, time{ display: inline }
 /*  Gen Text 	*/	p { font-size: 1em; margin: 0 0 1em 0; }  strong { font-weight: bold; }  em,dfn { font-style: italic; }  dfn{ font-weight: bold; }  small, .small{ font-size: .8em; }  .large{ font-size: 1.2em; }
-/*  Links 		*/	a:link { -webkit-tap-highlight-color: #DF851B; } a:hover, a:
+/*  Links 		*/	a:link { -webkit-tap-highlight-color: #DF851B; } a:hover, a:active { outline: none; }
+/*  Headings 	*/ 	h1, h2, h3, h4, h5, h6 { font-weight: normal; margin: 0; }  h1 a, h2 a, h3 a, h4 a, h5 a, h6 a, nav a{ text-decoration: none; }
+/*  Quotes 		*/	blockquote, q { quotes: none; } blockquote:before, blockquote:after, q:before, q:after { content: ''; content: none; }
+/*  Help Text 	*/	abbr[title], dfn[title],acronym[title] { border-bottom: 
