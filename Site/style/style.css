@@ -35,4 +35,9 @@
 }
 
 /*		Typography  
------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------- */
+html{ font-size: 18.75px; line-height: 24px; }
+body{ font: normal normal 1em/1.6em Georgia, serif; color: #333; }
+
+p{ margin-bottom: 1em;  }
+blockquote{ margin-left: 1em; padding-left: .5em; font-style: italic; border-left: 2px solid #ccc; 
