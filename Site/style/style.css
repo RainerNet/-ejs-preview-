@@ -49,4 +49,14 @@ blockquote:before{  }
 /* Default Headings */
 h1, h2, h3, 
 h4, h5, h6,
-.heading 	{ font-family: "LeagueGothicRegular"; text-transform: uppercase; letter-spacing
+.heading 	{ font-family: "LeagueGothicRegular"; text-transform: uppercase; letter-spacing: .1em; font-weight: normal;  }
+
+h1			{ font-size: 3em; }
+h2			{ font-size: 2em; }
+h3			{ font-size: 2em; text-transform: uppercase; letter-spacing: .1em; }
+h4, h5		{ font-size: 1.8em; font-style: italic; }
+h6			{ font-size: 2em; text-transform: uppercase; letter-spacing: .1em;  }
+
+
+/* Links 
+-------------------------------------------------------
