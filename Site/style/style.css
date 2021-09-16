@@ -59,4 +59,15 @@ h6			{ font-size: 2em; text-transform: uppercase; letter-spacing: .1em;  }
 
 
 /* Links 
--------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------- */
+a           { color: #DF851B; text-decoration: none; }
+a:focus, 
+a:hover     { color: #000; }
+a.active	{  }
+
+a[target="_blank"]:after{content: url('../images/link-dark-3.png');padding-left: 4px;}
+a.CTA[target="_blank"]:after{ content: ''; }
+
+a:link 		{ -webkit-tap-highlight-color: #DF851B; }
+
+/* F
