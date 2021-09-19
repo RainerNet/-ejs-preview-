@@ -72,4 +72,14 @@ a:link 		{ -webkit-tap-highlight-color: #DF851B; }
 
 /* Forms 
 ---------------------------------------------------------------------------------------------------------------------------------------------------- */
-input,textarea		{ background: #fff; padding: .4em; width: 90%; border: 0; border-bottom: 1px solid #ddd; font: normal normal 1em/1.6em Baskerville, "Baskerville Old Face", Garamond, Palatino, "Palatino Linotype", 
+input,textarea		{ background: #fff; padding: .4em; width: 90%; border: 0; border-bottom: 1px solid #ddd; font: normal normal 1em/1.6em Baskerville, "Baskerville Old Face", Garamond, Palatino, "Palatino Linotype", "Hoefler Text", "Times New Roman", serif; }
+textarea	  		{ width: 90%; border: 1px solid #ddd; }
+input#submit		{ background: #222; color: #eee; padding: .5em .5em .3em .5em; }
+input#submit:hover	{ color: yellow; }
+input:valid, 
+textarea:valid   	{  }
+
+
+
+/*		BLOCKS
+/////////////////////////////////////////////////////////////////////////////
