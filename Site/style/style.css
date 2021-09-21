@@ -82,4 +82,13 @@ textarea:valid   	{  }
 
 
 /*		BLOCKS
-/////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+.onethird{ 	width: 30%; margin-right: 3%; float: left; }
+.twothird{ 	width: 63%; margin-right: 3%; float: left;  }
+.half	{ 	width: 47%; margin-right: 3%; float: left;  }
+.last	{ 	margin-right: 0%; }
+.inside	{ margin: 10px; }
+
+/*		Page Structure & Style
+-----------------------------------------------------
