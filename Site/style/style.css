@@ -97,4 +97,8 @@ body	{  }
 
 /* 	Header & Nav
 ---------------------------------------------------------------------------------------------------------------------------------------------------- */
-header{ position:
+header{ position: fixed; top: 0; height: 40px; line-height: 40px; width: 100%; background: #000; color: #fff; margin:0; }
+header h1{ width: 30%; margin:0 3% 0 0; font-size: 1.2em; float: left; text-indent: 10px; }
+header nav{ width: 30%; margin-right: 3%; float: left; text-align: center; }
+header nav li{ display: inline-block; width: 18%; }
+header #use
