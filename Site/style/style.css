@@ -110,4 +110,16 @@ header #user{ width: 33%; float: left; text-align: right;  }
 #container{ padding: 10px; max-width: 960px; margin: 40px auto 0; background: #fff; }
 
 /* Info */
-#fact img{ width: 30%; margin: 0
+#fact img{ width: 30%; margin: 0 3% 3% 0; display: block; background: #999; height: 400px; float: left; }
+
+
+
+
+
+/* 	Footer
+---------------------------------------------------------------------------------------------------------------------------------------------------- */
+footer{ margin-top: 40px; padding-top: 10px; text-align: center; color: #ccc; }
+
+
+/*		PAGE SPECIFICS
+////////////////////
