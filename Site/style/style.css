@@ -130,4 +130,18 @@ footer{ margin-top: 40px; padding-top: 10px; text-align: center; color: #ccc; }
 
 
 /*		@MEDIA
-/////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+
+@media all and (orientation:portrait) {}
+
+@media all and (orientation:landscape) {}
+
+
+@media screen and (max-device-width: 1280px), screen and (max-width: 1280px) {
+}
+
+@media screen and (max-device-width: 760px), screen and (max-width: 760px) {
+}
+
+@media screen and (max-device-width: 480px), screen and (max-width: 48
