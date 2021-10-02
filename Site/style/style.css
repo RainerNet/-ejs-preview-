@@ -144,4 +144,10 @@ footer{ margin-top: 40px; padding-top: 10px; text-align: center; color: #ccc; }
 @media screen and (max-device-width: 760px), screen and (max-width: 760px) {
 }
 
-@media screen and (max-device-width: 480px), screen and (max-width: 48
+@media screen and (max-device-width: 480px), screen and (max-width: 480px) {
+}
+
+
+
+@media print {
+	* { background: transparent !important; color: black !important; text-shadow: none !important; filter:none !important; -ms-filter: none !important; } a, a:visited { color: #444 !important; text-decoration: underline; }a[href]:after { content: " (" attr(href) ")"; }abbr[title]:after { content: " (" attr(title) ")"; 
