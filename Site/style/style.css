@@ -161,4 +161,10 @@ footer{ margin-top: 40px; padding-top: 10px; text-align: center; color: #ccc; }
 .loud       { color: #000; }
 .highlight  { background:#ff0; }
 .caps     	{ text-transform: uppercase; font-size: .9em; letter-spacing:1px;}
-.amp		{ font-
+.amp		{ font-family: Baskerville,"Palatino Linotype", Palatino, serif; font-style: italic;}
+.num		{ font: .8em Georgia;}
+
+.ir 		{ display: block; text-indent: -999em; overflow: hidden; background-repeat: no-repeat; text-align: left; direction: ltr; }
+.inner 		{ margin: 10px; }
+.first     	{ margin-left:0; padding-left:0; }
+.last      	{ margin-r
