@@ -173,4 +173,6 @@ footer{ margin-top: 40px; padding-top: 10px; text-align: center; color: #ccc; }
 .left		{ float: left; }
 .right		{ float: right; }
 
-.CTA{ background: #F9E9C7; margin: 0px 0 10px; display: block; height: 24px; line-height: 24px; text-indent: 8px; font-style: italic; text-transform: lowercase; color: #DF
+.CTA{ background: #F9E9C7; margin: 0px 0 10px; display: block; height: 24px; line-height: 24px; text-indent: 8px; font-style: italic; text-transform: lowercase; color: #DF851B; font-weight: normal  }
+.CTA:before{ content: ""; background: #F9E9C7; border-left: 8px solid #fff;  border-top: 12px solid transparent;  border-bottom: 12px solid transparent; height: 0px; display: block; width: 0px; float: left;  }
+.CTA:after{  content: ""; background: #fff; border-left: 12px solid #F9E9C7; border-top: 12px solid trans
