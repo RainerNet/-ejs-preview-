@@ -167,4 +167,10 @@ footer{ margin-top: 40px; padding-top: 10px; text-align: center; color: #ccc; }
 .ir 		{ display: block; text-indent: -999em; overflow: hidden; background-repeat: no-repeat; text-align: left; direction: ltr; }
 .inner 		{ margin: 10px; }
 .first     	{ margin-left:0; padding-left:0; }
-.last      	{ margin-r
+.last      	{ margin-right:0 !important; padding-right:0; }
+.top       	{ margin-top:0; padding-top:0; }
+.bottom    	{ margin-bottom:0; padding-bottom:0; }
+.left		{ float: left; }
+.right		{ float: right; }
+
+.CTA{ background: #F9E9C7; margin: 0px 0 10px; display: block; height: 24px; line-height: 24px; text-indent: 8px; font-style: italic; text-transform: lowercase; color: #DF
