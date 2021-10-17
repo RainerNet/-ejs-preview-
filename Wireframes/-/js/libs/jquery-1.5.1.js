@@ -1438,3 +1438,333 @@ jQuery.extend({
 
 			// See jQuery.data for more information
 			id = isNode ? elem[ jQuery.expando ] : jQuery.expando;
+
+		// If there is already no cache entry for this object, there is no
+		// purpose in continuing
+		if ( !cache[ id ] ) {
+			return;
+		}
+
+		if ( name ) {
+			var thisCache = pvt ? cache[ id ][ internalKey ] : cache[ id ];
+
+			if ( thisCache ) {
+				delete thisCache[ name ];
+
+				// If there is no data left in the cache, we want to continue
+				// and let the cache object itself get destroyed
+				if ( !isEmptyDataObject(thisCache) ) {
+					return;
+				}
+			}
+		}
+
+		// See jQuery.data for more information
+		if ( pvt ) {
+			delete cache[ id ][ internalKey ];
+
+			// Don't destroy the parent cache unless the internal data object
+			// had been the only thing left in it
+			if ( !isEmptyDataObject(cache[ id ]) ) {
+				return;
+			}
+		}
+
+		var internalCache = cache[ id ][ internalKey ];
+
+		// Browsers that fail expando deletion also refuse to delete expandos on
+		// the window, but it will allow it on all other JS objects; other browsers
+		// don't care
+		if ( jQuery.support.deleteExpando || cache != window ) {
+			delete cache[ id ];
+		} else {
+			cache[ id ] = null;
+		}
+
+		// We destroyed the entire user cache at once because it's faster than
+		// iterating through each key, but we need to continue to persist internal
+		// data if it existed
+		if ( internalCache ) {
+			cache[ id ] = {};
+			// TODO: This is a hack for 1.5 ONLY. Avoids exposing jQuery
+			// metadata on plain JS objects when the object is serialized using
+			// JSON.stringify
+			if ( !isNode ) {
+				cache[ id ].toJSON = jQuery.noop;
+			}
+
+			cache[ id ][ internalKey ] = internalCache;
+
+		// Otherwise, we need to eliminate the expando on the node to avoid
+		// false lookups in the cache for entries that no longer exist
+		} else if ( isNode ) {
+			// IE does not allow us to delete expando properties from nodes,
+			// nor does it have a removeAttribute function on Document nodes;
+			// we must handle all of these cases
+			if ( jQuery.support.deleteExpando ) {
+				delete elem[ jQuery.expando ];
+			} else if ( elem.removeAttribute ) {
+				elem.removeAttribute( jQuery.expando );
+			} else {
+				elem[ jQuery.expando ] = null;
+			}
+		}
+	},
+
+	// For internal use only.
+	_data: function( elem, name, data ) {
+		return jQuery.data( elem, name, data, true );
+	},
+
+	// A method for determining if a DOM node can handle the data expando
+	acceptData: function( elem ) {
+		if ( elem.nodeName ) {
+			var match = jQuery.noData[ elem.nodeName.toLowerCase() ];
+
+			if ( match ) {
+				return !(match === true || elem.getAttribute("classid") !== match);
+			}
+		}
+
+		return true;
+	}
+});
+
+jQuery.fn.extend({
+	data: function( key, value ) {
+		var data = null;
+
+		if ( typeof key === "undefined" ) {
+			if ( this.length ) {
+				data = jQuery.data( this[0] );
+
+				if ( this[0].nodeType === 1 ) {
+					var attr = this[0].attributes, name;
+					for ( var i = 0, l = attr.length; i < l; i++ ) {
+						name = attr[i].name;
+
+						if ( name.indexOf( "data-" ) === 0 ) {
+							name = name.substr( 5 );
+							dataAttr( this[0], name, data[ name ] );
+						}
+					}
+				}
+			}
+
+			return data;
+
+		} else if ( typeof key === "object" ) {
+			return this.each(function() {
+				jQuery.data( this, key );
+			});
+		}
+
+		var parts = key.split(".");
+		parts[1] = parts[1] ? "." + parts[1] : "";
+
+		if ( value === undefined ) {
+			data = this.triggerHandler("getData" + parts[1] + "!", [parts[0]]);
+
+			// Try to fetch any internally stored data first
+			if ( data === undefined && this.length ) {
+				data = jQuery.data( this[0], key );
+				data = dataAttr( this[0], key, data );
+			}
+
+			return data === undefined && parts[1] ?
+				this.data( parts[0] ) :
+				data;
+
+		} else {
+			return this.each(function() {
+				var $this = jQuery( this ),
+					args = [ parts[0], value ];
+
+				$this.triggerHandler( "setData" + parts[1] + "!", args );
+				jQuery.data( this, key, value );
+				$this.triggerHandler( "changeData" + parts[1] + "!", args );
+			});
+		}
+	},
+
+	removeData: function( key ) {
+		return this.each(function() {
+			jQuery.removeData( this, key );
+		});
+	}
+});
+
+function dataAttr( elem, key, data ) {
+	// If nothing was found internally, try to fetch any
+	// data from the HTML5 data-* attribute
+	if ( data === undefined && elem.nodeType === 1 ) {
+		data = elem.getAttribute( "data-" + key );
+
+		if ( typeof data === "string" ) {
+			try {
+				data = data === "true" ? true :
+				data === "false" ? false :
+				data === "null" ? null :
+				!jQuery.isNaN( data ) ? parseFloat( data ) :
+					rbrace.test( data ) ? jQuery.parseJSON( data ) :
+					data;
+			} catch( e ) {}
+
+			// Make sure we set the data so it isn't changed later
+			jQuery.data( elem, key, data );
+
+		} else {
+			data = undefined;
+		}
+	}
+
+	return data;
+}
+
+// TODO: This is a hack for 1.5 ONLY to allow objects with a single toJSON
+// property to be considered empty objects; this property always exists in
+// order to make sure JSON.stringify does not expose internal metadata
+function isEmptyDataObject( obj ) {
+	for ( var name in obj ) {
+		if ( name !== "toJSON" ) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
+
+
+jQuery.extend({
+	queue: function( elem, type, data ) {
+		if ( !elem ) {
+			return;
+		}
+
+		type = (type || "fx") + "queue";
+		var q = jQuery._data( elem, type );
+
+		// Speed up dequeue by getting out quickly if this is just a lookup
+		if ( !data ) {
+			return q || [];
+		}
+
+		if ( !q || jQuery.isArray(data) ) {
+			q = jQuery._data( elem, type, jQuery.makeArray(data) );
+
+		} else {
+			q.push( data );
+		}
+
+		return q;
+	},
+
+	dequeue: function( elem, type ) {
+		type = type || "fx";
+
+		var queue = jQuery.queue( elem, type ),
+			fn = queue.shift();
+
+		// If the fx queue is dequeued, always remove the progress sentinel
+		if ( fn === "inprogress" ) {
+			fn = queue.shift();
+		}
+
+		if ( fn ) {
+			// Add a progress sentinel to prevent the fx queue from being
+			// automatically dequeued
+			if ( type === "fx" ) {
+				queue.unshift("inprogress");
+			}
+
+			fn.call(elem, function() {
+				jQuery.dequeue(elem, type);
+			});
+		}
+
+		if ( !queue.length ) {
+			jQuery.removeData( elem, type + "queue", true );
+		}
+	}
+});
+
+jQuery.fn.extend({
+	queue: function( type, data ) {
+		if ( typeof type !== "string" ) {
+			data = type;
+			type = "fx";
+		}
+
+		if ( data === undefined ) {
+			return jQuery.queue( this[0], type );
+		}
+		return this.each(function( i ) {
+			var queue = jQuery.queue( this, type, data );
+
+			if ( type === "fx" && queue[0] !== "inprogress" ) {
+				jQuery.dequeue( this, type );
+			}
+		});
+	},
+	dequeue: function( type ) {
+		return this.each(function() {
+			jQuery.dequeue( this, type );
+		});
+	},
+
+	// Based off of the plugin by Clint Helfers, with permission.
+	// http://blindsignals.com/index.php/2009/07/jquery-delay/
+	delay: function( time, type ) {
+		time = jQuery.fx ? jQuery.fx.speeds[time] || time : time;
+		type = type || "fx";
+
+		return this.queue( type, function() {
+			var elem = this;
+			setTimeout(function() {
+				jQuery.dequeue( elem, type );
+			}, time );
+		});
+	},
+
+	clearQueue: function( type ) {
+		return this.queue( type || "fx", [] );
+	}
+});
+
+
+
+
+var rclass = /[\n\t\r]/g,
+	rspaces = /\s+/,
+	rreturn = /\r/g,
+	rspecialurl = /^(?:href|src|style)$/,
+	rtype = /^(?:button|input)$/i,
+	rfocusable = /^(?:button|input|object|select|textarea)$/i,
+	rclickable = /^a(?:rea)?$/i,
+	rradiocheck = /^(?:radio|checkbox)$/i;
+
+jQuery.props = {
+	"for": "htmlFor",
+	"class": "className",
+	readonly: "readOnly",
+	maxlength: "maxLength",
+	cellspacing: "cellSpacing",
+	rowspan: "rowSpan",
+	colspan: "colSpan",
+	tabindex: "tabIndex",
+	usemap: "useMap",
+	frameborder: "frameBorder"
+};
+
+jQuery.fn.extend({
+	attr: function( name, value ) {
+		return jQuery.access( this, name, value, true, jQuery.attr );
+	},
+
+	removeAttr: function( name, fn ) {
+		return this.each(function(){
+			jQuery.attr( this, name, "" );
+			if ( this.nodeType === 1 ) {
+				this.removeAttribute( name );
