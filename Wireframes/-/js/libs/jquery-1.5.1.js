@@ -3580,3 +3580,338 @@ Sizzle.filter = function( expr, set, inplace, not ) {
 								}
 
 							} else if ( pass ) {
+								result.push( item );
+								anyFound = true;
+							}
+						}
+					}
+				}
+
+				if ( found !== undefined ) {
+					if ( !inplace ) {
+						curLoop = result;
+					}
+
+					expr = expr.replace( Expr.match[ type ], "" );
+
+					if ( !anyFound ) {
+						return [];
+					}
+
+					break;
+				}
+			}
+		}
+
+		// Improper expression
+		if ( expr === old ) {
+			if ( anyFound == null ) {
+				Sizzle.error( expr );
+
+			} else {
+				break;
+			}
+		}
+
+		old = expr;
+	}
+
+	return curLoop;
+};
+
+Sizzle.error = function( msg ) {
+	throw "Syntax error, unrecognized expression: " + msg;
+};
+
+var Expr = Sizzle.selectors = {
+	order: [ "ID", "NAME", "TAG" ],
+
+	match: {
+		ID: /#((?:[\w\u00c0-\uFFFF\-]|\\.)+)/,
+		CLASS: /\.((?:[\w\u00c0-\uFFFF\-]|\\.)+)/,
+		NAME: /\[name=['"]*((?:[\w\u00c0-\uFFFF\-]|\\.)+)['"]*\]/,
+		ATTR: /\[\s*((?:[\w\u00c0-\uFFFF\-]|\\.)+)\s*(?:(\S?=)\s*(?:(['"])(.*?)\3|(#?(?:[\w\u00c0-\uFFFF\-]|\\.)*)|)|)\s*\]/,
+		TAG: /^((?:[\w\u00c0-\uFFFF\*\-]|\\.)+)/,
+		CHILD: /:(only|nth|last|first)-child(?:\(\s*(even|odd|(?:[+\-]?\d+|(?:[+\-]?\d*)?n\s*(?:[+\-]\s*\d+)?))\s*\))?/,
+		POS: /:(nth|eq|gt|lt|first|last|even|odd)(?:\((\d*)\))?(?=[^\-]|$)/,
+		PSEUDO: /:((?:[\w\u00c0-\uFFFF\-]|\\.)+)(?:\((['"]?)((?:\([^\)]+\)|[^\(\)]*)+)\2\))?/
+	},
+
+	leftMatch: {},
+
+	attrMap: {
+		"class": "className",
+		"for": "htmlFor"
+	},
+
+	attrHandle: {
+		href: function( elem ) {
+			return elem.getAttribute( "href" );
+		},
+		type: function( elem ) {
+			return elem.getAttribute( "type" );
+		}
+	},
+
+	relative: {
+		"+": function(checkSet, part){
+			var isPartStr = typeof part === "string",
+				isTag = isPartStr && !rNonWord.test( part ),
+				isPartStrNotTag = isPartStr && !isTag;
+
+			if ( isTag ) {
+				part = part.toLowerCase();
+			}
+
+			for ( var i = 0, l = checkSet.length, elem; i < l; i++ ) {
+				if ( (elem = checkSet[i]) ) {
+					while ( (elem = elem.previousSibling) && elem.nodeType !== 1 ) {}
+
+					checkSet[i] = isPartStrNotTag || elem && elem.nodeName.toLowerCase() === part ?
+						elem || false :
+						elem === part;
+				}
+			}
+
+			if ( isPartStrNotTag ) {
+				Sizzle.filter( part, checkSet, true );
+			}
+		},
+
+		">": function( checkSet, part ) {
+			var elem,
+				isPartStr = typeof part === "string",
+				i = 0,
+				l = checkSet.length;
+
+			if ( isPartStr && !rNonWord.test( part ) ) {
+				part = part.toLowerCase();
+
+				for ( ; i < l; i++ ) {
+					elem = checkSet[i];
+
+					if ( elem ) {
+						var parent = elem.parentNode;
+						checkSet[i] = parent.nodeName.toLowerCase() === part ? parent : false;
+					}
+				}
+
+			} else {
+				for ( ; i < l; i++ ) {
+					elem = checkSet[i];
+
+					if ( elem ) {
+						checkSet[i] = isPartStr ?
+							elem.parentNode :
+							elem.parentNode === part;
+					}
+				}
+
+				if ( isPartStr ) {
+					Sizzle.filter( part, checkSet, true );
+				}
+			}
+		},
+
+		"": function(checkSet, part, isXML){
+			var nodeCheck,
+				doneName = done++,
+				checkFn = dirCheck;
+
+			if ( typeof part === "string" && !rNonWord.test( part ) ) {
+				part = part.toLowerCase();
+				nodeCheck = part;
+				checkFn = dirNodeCheck;
+			}
+
+			checkFn( "parentNode", part, doneName, checkSet, nodeCheck, isXML );
+		},
+
+		"~": function( checkSet, part, isXML ) {
+			var nodeCheck,
+				doneName = done++,
+				checkFn = dirCheck;
+
+			if ( typeof part === "string" && !rNonWord.test( part ) ) {
+				part = part.toLowerCase();
+				nodeCheck = part;
+				checkFn = dirNodeCheck;
+			}
+
+			checkFn( "previousSibling", part, doneName, checkSet, nodeCheck, isXML );
+		}
+	},
+
+	find: {
+		ID: function( match, context, isXML ) {
+			if ( typeof context.getElementById !== "undefined" && !isXML ) {
+				var m = context.getElementById(match[1]);
+				// Check parentNode to catch when Blackberry 4.6 returns
+				// nodes that are no longer in the document #6963
+				return m && m.parentNode ? [m] : [];
+			}
+		},
+
+		NAME: function( match, context ) {
+			if ( typeof context.getElementsByName !== "undefined" ) {
+				var ret = [],
+					results = context.getElementsByName( match[1] );
+
+				for ( var i = 0, l = results.length; i < l; i++ ) {
+					if ( results[i].getAttribute("name") === match[1] ) {
+						ret.push( results[i] );
+					}
+				}
+
+				return ret.length === 0 ? null : ret;
+			}
+		},
+
+		TAG: function( match, context ) {
+			if ( typeof context.getElementsByTagName !== "undefined" ) {
+				return context.getElementsByTagName( match[1] );
+			}
+		}
+	},
+	preFilter: {
+		CLASS: function( match, curLoop, inplace, result, not, isXML ) {
+			match = " " + match[1].replace( rBackslash, "" ) + " ";
+
+			if ( isXML ) {
+				return match;
+			}
+
+			for ( var i = 0, elem; (elem = curLoop[i]) != null; i++ ) {
+				if ( elem ) {
+					if ( not ^ (elem.className && (" " + elem.className + " ").replace(/[\t\n\r]/g, " ").indexOf(match) >= 0) ) {
+						if ( !inplace ) {
+							result.push( elem );
+						}
+
+					} else if ( inplace ) {
+						curLoop[i] = false;
+					}
+				}
+			}
+
+			return false;
+		},
+
+		ID: function( match ) {
+			return match[1].replace( rBackslash, "" );
+		},
+
+		TAG: function( match, curLoop ) {
+			return match[1].replace( rBackslash, "" ).toLowerCase();
+		},
+
+		CHILD: function( match ) {
+			if ( match[1] === "nth" ) {
+				if ( !match[2] ) {
+					Sizzle.error( match[0] );
+				}
+
+				match[2] = match[2].replace(/^\+|\s*/g, '');
+
+				// parse equations like 'even', 'odd', '5', '2n', '3n+2', '4n-1', '-n+6'
+				var test = /(-?)(\d*)(?:n([+\-]?\d*))?/.exec(
+					match[2] === "even" && "2n" || match[2] === "odd" && "2n+1" ||
+					!/\D/.test( match[2] ) && "0n+" + match[2] || match[2]);
+
+				// calculate the numbers (first)n+(last) including if they are negative
+				match[2] = (test[1] + (test[2] || 1)) - 0;
+				match[3] = test[3] - 0;
+			}
+			else if ( match[2] ) {
+				Sizzle.error( match[0] );
+			}
+
+			// TODO: Move to normal caching system
+			match[0] = done++;
+
+			return match;
+		},
+
+		ATTR: function( match, curLoop, inplace, result, not, isXML ) {
+			var name = match[1] = match[1].replace( rBackslash, "" );
+			
+			if ( !isXML && Expr.attrMap[name] ) {
+				match[1] = Expr.attrMap[name];
+			}
+
+			// Handle if an un-quoted value was used
+			match[4] = ( match[4] || match[5] || "" ).replace( rBackslash, "" );
+
+			if ( match[2] === "~=" ) {
+				match[4] = " " + match[4] + " ";
+			}
+
+			return match;
+		},
+
+		PSEUDO: function( match, curLoop, inplace, result, not ) {
+			if ( match[1] === "not" ) {
+				// If we're dealing with a complex expression, or a simple one
+				if ( ( chunker.exec(match[3]) || "" ).length > 1 || /^\w/.test(match[3]) ) {
+					match[3] = Sizzle(match[3], null, null, curLoop);
+
+				} else {
+					var ret = Sizzle.filter(match[3], curLoop, inplace, true ^ not);
+
+					if ( !inplace ) {
+						result.push.apply( result, ret );
+					}
+
+					return false;
+				}
+
+			} else if ( Expr.match.POS.test( match[0] ) || Expr.match.CHILD.test( match[0] ) ) {
+				return true;
+			}
+			
+			return match;
+		},
+
+		POS: function( match ) {
+			match.unshift( true );
+
+			return match;
+		}
+	},
+	
+	filters: {
+		enabled: function( elem ) {
+			return elem.disabled === false && elem.type !== "hidden";
+		},
+
+		disabled: function( elem ) {
+			return elem.disabled === true;
+		},
+
+		checked: function( elem ) {
+			return elem.checked === true;
+		},
+		
+		selected: function( elem ) {
+			// Accessing this property makes selected-by-default
+			// options in Safari work properly
+			if ( elem.parentNode ) {
+				elem.parentNode.selectedIndex;
+			}
+			
+			return elem.selected === true;
+		},
+
+		parent: function( elem ) {
+			return !!elem.firstChild;
+		},
+
+		empty: function( elem ) {
+			return !elem.firstChild;
+		},
+
+		has: function( elem, i, match ) {
+			return !!Sizzle( match[3], elem ).length;
+		},
+
+		header: function( elem ) {
