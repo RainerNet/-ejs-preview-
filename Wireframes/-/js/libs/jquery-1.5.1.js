@@ -4266,3 +4266,387 @@ if ( document.documentElement.compareDocumentPosition ) {
 		if ( a === b ) {
 			return ret;
 		}
+
+		var cur = a.nextSibling;
+
+		while ( cur ) {
+			if ( cur === b ) {
+				return -1;
+			}
+
+			cur = cur.nextSibling;
+		}
+
+		return 1;
+	};
+}
+
+// Utility function for retreiving the text value of an array of DOM nodes
+Sizzle.getText = function( elems ) {
+	var ret = "", elem;
+
+	for ( var i = 0; elems[i]; i++ ) {
+		elem = elems[i];
+
+		// Get the text from text nodes and CDATA nodes
+		if ( elem.nodeType === 3 || elem.nodeType === 4 ) {
+			ret += elem.nodeValue;
+
+		// Traverse everything else, except comment nodes
+		} else if ( elem.nodeType !== 8 ) {
+			ret += Sizzle.getText( elem.childNodes );
+		}
+	}
+
+	return ret;
+};
+
+// Check to see if the browser returns elements by name when
+// querying by getElementById (and provide a workaround)
+(function(){
+	// We're going to inject a fake input element with a specified name
+	var form = document.createElement("div"),
+		id = "script" + (new Date()).getTime(),
+		root = document.documentElement;
+
+	form.innerHTML = "<a name='" + id + "'/>";
+
+	// Inject it into the root element, check its status, and remove it quickly
+	root.insertBefore( form, root.firstChild );
+
+	// The workaround has to do additional checks after a getElementById
+	// Which slows things down for other browsers (hence the branching)
+	if ( document.getElementById( id ) ) {
+		Expr.find.ID = function( match, context, isXML ) {
+			if ( typeof context.getElementById !== "undefined" && !isXML ) {
+				var m = context.getElementById(match[1]);
+
+				return m ?
+					m.id === match[1] || typeof m.getAttributeNode !== "undefined" && m.getAttributeNode("id").nodeValue === match[1] ?
+						[m] :
+						undefined :
+					[];
+			}
+		};
+
+		Expr.filter.ID = function( elem, match ) {
+			var node = typeof elem.getAttributeNode !== "undefined" && elem.getAttributeNode("id");
+
+			return elem.nodeType === 1 && node && node.nodeValue === match;
+		};
+	}
+
+	root.removeChild( form );
+
+	// release memory in IE
+	root = form = null;
+})();
+
+(function(){
+	// Check to see if the browser returns only elements
+	// when doing getElementsByTagName("*")
+
+	// Create a fake element
+	var div = document.createElement("div");
+	div.appendChild( document.createComment("") );
+
+	// Make sure no comments are found
+	if ( div.getElementsByTagName("*").length > 0 ) {
+		Expr.find.TAG = function( match, context ) {
+			var results = context.getElementsByTagName( match[1] );
+
+			// Filter out possible comments
+			if ( match[1] === "*" ) {
+				var tmp = [];
+
+				for ( var i = 0; results[i]; i++ ) {
+					if ( results[i].nodeType === 1 ) {
+						tmp.push( results[i] );
+					}
+				}
+
+				results = tmp;
+			}
+
+			return results;
+		};
+	}
+
+	// Check to see if an attribute returns normalized href attributes
+	div.innerHTML = "<a href='#'></a>";
+
+	if ( div.firstChild && typeof div.firstChild.getAttribute !== "undefined" &&
+			div.firstChild.getAttribute("href") !== "#" ) {
+
+		Expr.attrHandle.href = function( elem ) {
+			return elem.getAttribute( "href", 2 );
+		};
+	}
+
+	// release memory in IE
+	div = null;
+})();
+
+if ( document.querySelectorAll ) {
+	(function(){
+		var oldSizzle = Sizzle,
+			div = document.createElement("div"),
+			id = "__sizzle__";
+
+		div.innerHTML = "<p class='TEST'></p>";
+
+		// Safari can't handle uppercase or unicode characters when
+		// in quirks mode.
+		if ( div.querySelectorAll && div.querySelectorAll(".TEST").length === 0 ) {
+			return;
+		}
+	
+		Sizzle = function( query, context, extra, seed ) {
+			context = context || document;
+
+			// Only use querySelectorAll on non-XML documents
+			// (ID selectors don't work in non-HTML documents)
+			if ( !seed && !Sizzle.isXML(context) ) {
+				// See if we find a selector to speed up
+				var match = /^(\w+$)|^\.([\w\-]+$)|^#([\w\-]+$)/.exec( query );
+				
+				if ( match && (context.nodeType === 1 || context.nodeType === 9) ) {
+					// Speed-up: Sizzle("TAG")
+					if ( match[1] ) {
+						return makeArray( context.getElementsByTagName( query ), extra );
+					
+					// Speed-up: Sizzle(".CLASS")
+					} else if ( match[2] && Expr.find.CLASS && context.getElementsByClassName ) {
+						return makeArray( context.getElementsByClassName( match[2] ), extra );
+					}
+				}
+				
+				if ( context.nodeType === 9 ) {
+					// Speed-up: Sizzle("body")
+					// The body element only exists once, optimize finding it
+					if ( query === "body" && context.body ) {
+						return makeArray( [ context.body ], extra );
+						
+					// Speed-up: Sizzle("#ID")
+					} else if ( match && match[3] ) {
+						var elem = context.getElementById( match[3] );
+
+						// Check parentNode to catch when Blackberry 4.6 returns
+						// nodes that are no longer in the document #6963
+						if ( elem && elem.parentNode ) {
+							// Handle the case where IE and Opera return items
+							// by name instead of ID
+							if ( elem.id === match[3] ) {
+								return makeArray( [ elem ], extra );
+							}
+							
+						} else {
+							return makeArray( [], extra );
+						}
+					}
+					
+					try {
+						return makeArray( context.querySelectorAll(query), extra );
+					} catch(qsaError) {}
+
+				// qSA works strangely on Element-rooted queries
+				// We can work around this by specifying an extra ID on the root
+				// and working up from there (Thanks to Andrew Dupont for the technique)
+				// IE 8 doesn't work on object elements
+				} else if ( context.nodeType === 1 && context.nodeName.toLowerCase() !== "object" ) {
+					var oldContext = context,
+						old = context.getAttribute( "id" ),
+						nid = old || id,
+						hasParent = context.parentNode,
+						relativeHierarchySelector = /^\s*[+~]/.test( query );
+
+					if ( !old ) {
+						context.setAttribute( "id", nid );
+					} else {
+						nid = nid.replace( /'/g, "\\$&" );
+					}
+					if ( relativeHierarchySelector && hasParent ) {
+						context = context.parentNode;
+					}
+
+					try {
+						if ( !relativeHierarchySelector || hasParent ) {
+							return makeArray( context.querySelectorAll( "[id='" + nid + "'] " + query ), extra );
+						}
+
+					} catch(pseudoError) {
+					} finally {
+						if ( !old ) {
+							oldContext.removeAttribute( "id" );
+						}
+					}
+				}
+			}
+		
+			return oldSizzle(query, context, extra, seed);
+		};
+
+		for ( var prop in oldSizzle ) {
+			Sizzle[ prop ] = oldSizzle[ prop ];
+		}
+
+		// release memory in IE
+		div = null;
+	})();
+}
+
+(function(){
+	var html = document.documentElement,
+		matches = html.matchesSelector || html.mozMatchesSelector || html.webkitMatchesSelector || html.msMatchesSelector,
+		pseudoWorks = false;
+
+	try {
+		// This should fail with an exception
+		// Gecko does not error, returns false instead
+		matches.call( document.documentElement, "[test!='']:sizzle" );
+	
+	} catch( pseudoError ) {
+		pseudoWorks = true;
+	}
+
+	if ( matches ) {
+		Sizzle.matchesSelector = function( node, expr ) {
+			// Make sure that attribute selectors are quoted
+			expr = expr.replace(/\=\s*([^'"\]]*)\s*\]/g, "='$1']");
+
+			if ( !Sizzle.isXML( node ) ) {
+				try { 
+					if ( pseudoWorks || !Expr.match.PSEUDO.test( expr ) && !/!=/.test( expr ) ) {
+						return matches.call( node, expr );
+					}
+				} catch(e) {}
+			}
+
+			return Sizzle(expr, null, null, [node]).length > 0;
+		};
+	}
+})();
+
+(function(){
+	var div = document.createElement("div");
+
+	div.innerHTML = "<div class='test e'></div><div class='test'></div>";
+
+	// Opera can't find a second classname (in 9.6)
+	// Also, make sure that getElementsByClassName actually exists
+	if ( !div.getElementsByClassName || div.getElementsByClassName("e").length === 0 ) {
+		return;
+	}
+
+	// Safari caches class attributes, doesn't catch changes (in 3.2)
+	div.lastChild.className = "e";
+
+	if ( div.getElementsByClassName("e").length === 1 ) {
+		return;
+	}
+	
+	Expr.order.splice(1, 0, "CLASS");
+	Expr.find.CLASS = function( match, context, isXML ) {
+		if ( typeof context.getElementsByClassName !== "undefined" && !isXML ) {
+			return context.getElementsByClassName(match[1]);
+		}
+	};
+
+	// release memory in IE
+	div = null;
+})();
+
+function dirNodeCheck( dir, cur, doneName, checkSet, nodeCheck, isXML ) {
+	for ( var i = 0, l = checkSet.length; i < l; i++ ) {
+		var elem = checkSet[i];
+
+		if ( elem ) {
+			var match = false;
+
+			elem = elem[dir];
+
+			while ( elem ) {
+				if ( elem.sizcache === doneName ) {
+					match = checkSet[elem.sizset];
+					break;
+				}
+
+				if ( elem.nodeType === 1 && !isXML ){
+					elem.sizcache = doneName;
+					elem.sizset = i;
+				}
+
+				if ( elem.nodeName.toLowerCase() === cur ) {
+					match = elem;
+					break;
+				}
+
+				elem = elem[dir];
+			}
+
+			checkSet[i] = match;
+		}
+	}
+}
+
+function dirCheck( dir, cur, doneName, checkSet, nodeCheck, isXML ) {
+	for ( var i = 0, l = checkSet.length; i < l; i++ ) {
+		var elem = checkSet[i];
+
+		if ( elem ) {
+			var match = false;
+			
+			elem = elem[dir];
+
+			while ( elem ) {
+				if ( elem.sizcache === doneName ) {
+					match = checkSet[elem.sizset];
+					break;
+				}
+
+				if ( elem.nodeType === 1 ) {
+					if ( !isXML ) {
+						elem.sizcache = doneName;
+						elem.sizset = i;
+					}
+
+					if ( typeof cur !== "string" ) {
+						if ( elem === cur ) {
+							match = true;
+							break;
+						}
+
+					} else if ( Sizzle.filter( cur, [elem] ).length > 0 ) {
+						match = elem;
+						break;
+					}
+				}
+
+				elem = elem[dir];
+			}
+
+			checkSet[i] = match;
+		}
+	}
+}
+
+if ( document.documentElement.contains ) {
+	Sizzle.contains = function( a, b ) {
+		return a !== b && (a.contains ? a.contains(b) : true);
+	};
+
+} else if ( document.documentElement.compareDocumentPosition ) {
+	Sizzle.contains = function( a, b ) {
+		return !!(a.compareDocumentPosition(b) & 16);
+	};
+
+} else {
+	Sizzle.contains = function() {
+		return false;
+	};
+}
+
+Sizzle.isXML = function( elem ) {
+	// documentElement is verified for cases where it doesn't yet exist
+	// (such as loading iframes in IE - #4833) 
+	var documentElement = (elem ? elem.ownerDocument || elem : 0).documentElement;
