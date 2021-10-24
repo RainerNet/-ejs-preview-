@@ -3915,3 +3915,354 @@ var Expr = Sizzle.selectors = {
 		},
 
 		header: function( elem ) {
+			return (/h\d/i).test( elem.nodeName );
+		},
+
+		text: function( elem ) {
+			// IE6 and 7 will map elem.type to 'text' for new HTML5 types (search, etc) 
+			// use getAttribute instead to test this case
+			return "text" === elem.getAttribute( 'type' );
+		},
+		radio: function( elem ) {
+			return "radio" === elem.type;
+		},
+
+		checkbox: function( elem ) {
+			return "checkbox" === elem.type;
+		},
+
+		file: function( elem ) {
+			return "file" === elem.type;
+		},
+		password: function( elem ) {
+			return "password" === elem.type;
+		},
+
+		submit: function( elem ) {
+			return "submit" === elem.type;
+		},
+
+		image: function( elem ) {
+			return "image" === elem.type;
+		},
+
+		reset: function( elem ) {
+			return "reset" === elem.type;
+		},
+
+		button: function( elem ) {
+			return "button" === elem.type || elem.nodeName.toLowerCase() === "button";
+		},
+
+		input: function( elem ) {
+			return (/input|select|textarea|button/i).test( elem.nodeName );
+		}
+	},
+	setFilters: {
+		first: function( elem, i ) {
+			return i === 0;
+		},
+
+		last: function( elem, i, match, array ) {
+			return i === array.length - 1;
+		},
+
+		even: function( elem, i ) {
+			return i % 2 === 0;
+		},
+
+		odd: function( elem, i ) {
+			return i % 2 === 1;
+		},
+
+		lt: function( elem, i, match ) {
+			return i < match[3] - 0;
+		},
+
+		gt: function( elem, i, match ) {
+			return i > match[3] - 0;
+		},
+
+		nth: function( elem, i, match ) {
+			return match[3] - 0 === i;
+		},
+
+		eq: function( elem, i, match ) {
+			return match[3] - 0 === i;
+		}
+	},
+	filter: {
+		PSEUDO: function( elem, match, i, array ) {
+			var name = match[1],
+				filter = Expr.filters[ name ];
+
+			if ( filter ) {
+				return filter( elem, i, match, array );
+
+			} else if ( name === "contains" ) {
+				return (elem.textContent || elem.innerText || Sizzle.getText([ elem ]) || "").indexOf(match[3]) >= 0;
+
+			} else if ( name === "not" ) {
+				var not = match[3];
+
+				for ( var j = 0, l = not.length; j < l; j++ ) {
+					if ( not[j] === elem ) {
+						return false;
+					}
+				}
+
+				return true;
+
+			} else {
+				Sizzle.error( name );
+			}
+		},
+
+		CHILD: function( elem, match ) {
+			var type = match[1],
+				node = elem;
+
+			switch ( type ) {
+				case "only":
+				case "first":
+					while ( (node = node.previousSibling) )	 {
+						if ( node.nodeType === 1 ) { 
+							return false; 
+						}
+					}
+
+					if ( type === "first" ) { 
+						return true; 
+					}
+
+					node = elem;
+
+				case "last":
+					while ( (node = node.nextSibling) )	 {
+						if ( node.nodeType === 1 ) { 
+							return false; 
+						}
+					}
+
+					return true;
+
+				case "nth":
+					var first = match[2],
+						last = match[3];
+
+					if ( first === 1 && last === 0 ) {
+						return true;
+					}
+					
+					var doneName = match[0],
+						parent = elem.parentNode;
+	
+					if ( parent && (parent.sizcache !== doneName || !elem.nodeIndex) ) {
+						var count = 0;
+						
+						for ( node = parent.firstChild; node; node = node.nextSibling ) {
+							if ( node.nodeType === 1 ) {
+								node.nodeIndex = ++count;
+							}
+						} 
+
+						parent.sizcache = doneName;
+					}
+					
+					var diff = elem.nodeIndex - last;
+
+					if ( first === 0 ) {
+						return diff === 0;
+
+					} else {
+						return ( diff % first === 0 && diff / first >= 0 );
+					}
+			}
+		},
+
+		ID: function( elem, match ) {
+			return elem.nodeType === 1 && elem.getAttribute("id") === match;
+		},
+
+		TAG: function( elem, match ) {
+			return (match === "*" && elem.nodeType === 1) || elem.nodeName.toLowerCase() === match;
+		},
+		
+		CLASS: function( elem, match ) {
+			return (" " + (elem.className || elem.getAttribute("class")) + " ")
+				.indexOf( match ) > -1;
+		},
+
+		ATTR: function( elem, match ) {
+			var name = match[1],
+				result = Expr.attrHandle[ name ] ?
+					Expr.attrHandle[ name ]( elem ) :
+					elem[ name ] != null ?
+						elem[ name ] :
+						elem.getAttribute( name ),
+				value = result + "",
+				type = match[2],
+				check = match[4];
+
+			return result == null ?
+				type === "!=" :
+				type === "=" ?
+				value === check :
+				type === "*=" ?
+				value.indexOf(check) >= 0 :
+				type === "~=" ?
+				(" " + value + " ").indexOf(check) >= 0 :
+				!check ?
+				value && result !== false :
+				type === "!=" ?
+				value !== check :
+				type === "^=" ?
+				value.indexOf(check) === 0 :
+				type === "$=" ?
+				value.substr(value.length - check.length) === check :
+				type === "|=" ?
+				value === check || value.substr(0, check.length + 1) === check + "-" :
+				false;
+		},
+
+		POS: function( elem, match, i, array ) {
+			var name = match[2],
+				filter = Expr.setFilters[ name ];
+
+			if ( filter ) {
+				return filter( elem, i, match, array );
+			}
+		}
+	}
+};
+
+var origPOS = Expr.match.POS,
+	fescape = function(all, num){
+		return "\\" + (num - 0 + 1);
+	};
+
+for ( var type in Expr.match ) {
+	Expr.match[ type ] = new RegExp( Expr.match[ type ].source + (/(?![^\[]*\])(?![^\(]*\))/.source) );
+	Expr.leftMatch[ type ] = new RegExp( /(^(?:.|\r|\n)*?)/.source + Expr.match[ type ].source.replace(/\\(\d+)/g, fescape) );
+}
+
+var makeArray = function( array, results ) {
+	array = Array.prototype.slice.call( array, 0 );
+
+	if ( results ) {
+		results.push.apply( results, array );
+		return results;
+	}
+	
+	return array;
+};
+
+// Perform a simple check to determine if the browser is capable of
+// converting a NodeList to an array using builtin methods.
+// Also verifies that the returned array holds DOM nodes
+// (which is not the case in the Blackberry browser)
+try {
+	Array.prototype.slice.call( document.documentElement.childNodes, 0 )[0].nodeType;
+
+// Provide a fallback method if it does not work
+} catch( e ) {
+	makeArray = function( array, results ) {
+		var i = 0,
+			ret = results || [];
+
+		if ( toString.call(array) === "[object Array]" ) {
+			Array.prototype.push.apply( ret, array );
+
+		} else {
+			if ( typeof array.length === "number" ) {
+				for ( var l = array.length; i < l; i++ ) {
+					ret.push( array[i] );
+				}
+
+			} else {
+				for ( ; array[i]; i++ ) {
+					ret.push( array[i] );
+				}
+			}
+		}
+
+		return ret;
+	};
+}
+
+var sortOrder, siblingCheck;
+
+if ( document.documentElement.compareDocumentPosition ) {
+	sortOrder = function( a, b ) {
+		if ( a === b ) {
+			hasDuplicate = true;
+			return 0;
+		}
+
+		if ( !a.compareDocumentPosition || !b.compareDocumentPosition ) {
+			return a.compareDocumentPosition ? -1 : 1;
+		}
+
+		return a.compareDocumentPosition(b) & 4 ? -1 : 1;
+	};
+
+} else {
+	sortOrder = function( a, b ) {
+		var al, bl,
+			ap = [],
+			bp = [],
+			aup = a.parentNode,
+			bup = b.parentNode,
+			cur = aup;
+
+		// The nodes are identical, we can exit early
+		if ( a === b ) {
+			hasDuplicate = true;
+			return 0;
+
+		// If the nodes are siblings (or identical) we can do a quick check
+		} else if ( aup === bup ) {
+			return siblingCheck( a, b );
+
+		// If no parents were found then the nodes are disconnected
+		} else if ( !aup ) {
+			return -1;
+
+		} else if ( !bup ) {
+			return 1;
+		}
+
+		// Otherwise they're somewhere else in the tree so we need
+		// to build up a full list of the parentNodes for comparison
+		while ( cur ) {
+			ap.unshift( cur );
+			cur = cur.parentNode;
+		}
+
+		cur = bup;
+
+		while ( cur ) {
+			bp.unshift( cur );
+			cur = cur.parentNode;
+		}
+
+		al = ap.length;
+		bl = bp.length;
+
+		// Start walking down the tree looking for a discrepancy
+		for ( var i = 0; i < al && i < bl; i++ ) {
+			if ( ap[i] !== bp[i] ) {
+				return siblingCheck( ap[i], bp[i] );
+			}
+		}
+
+		// We ended someplace up the tree so do a sibling check
+		return i === al ?
+			siblingCheck( a, bp[i], -1 ) :
+			siblingCheck( ap[i], b, 1 );
+	};
+
+	siblingCheck = function( a, b, ret ) {
+		if ( a === b ) {
+			return ret;
+		}
