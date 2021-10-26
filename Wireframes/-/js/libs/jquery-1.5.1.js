@@ -4991,3 +4991,366 @@ function winnow( elements, qualifier, keep ) {
 			qualifier = jQuery.filter( qualifier, filtered );
 		}
 	}
+
+	return jQuery.grep(elements, function( elem, i ) {
+		return (jQuery.inArray( elem, qualifier ) >= 0) === keep;
+	});
+}
+
+
+
+
+var rinlinejQuery = / jQuery\d+="(?:\d+|null)"/g,
+	rleadingWhitespace = /^\s+/,
+	rxhtmlTag = /<(?!area|br|col|embed|hr|img|input|link|meta|param)(([\w:]+)[^>]*)\/>/ig,
+	rtagName = /<([\w:]+)/,
+	rtbody = /<tbody/i,
+	rhtml = /<|&#?\w+;/,
+	rnocache = /<(?:script|object|embed|option|style)/i,
+	// checked="checked" or checked
+	rchecked = /checked\s*(?:[^=]|=\s*.checked.)/i,
+	wrapMap = {
+		option: [ 1, "<select multiple='multiple'>", "</select>" ],
+		legend: [ 1, "<fieldset>", "</fieldset>" ],
+		thead: [ 1, "<table>", "</table>" ],
+		tr: [ 2, "<table><tbody>", "</tbody></table>" ],
+		td: [ 3, "<table><tbody><tr>", "</tr></tbody></table>" ],
+		col: [ 2, "<table><tbody></tbody><colgroup>", "</colgroup></table>" ],
+		area: [ 1, "<map>", "</map>" ],
+		_default: [ 0, "", "" ]
+	};
+
+wrapMap.optgroup = wrapMap.option;
+wrapMap.tbody = wrapMap.tfoot = wrapMap.colgroup = wrapMap.caption = wrapMap.thead;
+wrapMap.th = wrapMap.td;
+
+// IE can't serialize <link> and <script> tags normally
+if ( !jQuery.support.htmlSerialize ) {
+	wrapMap._default = [ 1, "div<div>", "</div>" ];
+}
+
+jQuery.fn.extend({
+	text: function( text ) {
+		if ( jQuery.isFunction(text) ) {
+			return this.each(function(i) {
+				var self = jQuery( this );
+
+				self.text( text.call(this, i, self.text()) );
+			});
+		}
+
+		if ( typeof text !== "object" && text !== undefined ) {
+			return this.empty().append( (this[0] && this[0].ownerDocument || document).createTextNode( text ) );
+		}
+
+		return jQuery.text( this );
+	},
+
+	wrapAll: function( html ) {
+		if ( jQuery.isFunction( html ) ) {
+			return this.each(function(i) {
+				jQuery(this).wrapAll( html.call(this, i) );
+			});
+		}
+
+		if ( this[0] ) {
+			// The elements to wrap the target around
+			var wrap = jQuery( html, this[0].ownerDocument ).eq(0).clone(true);
+
+			if ( this[0].parentNode ) {
+				wrap.insertBefore( this[0] );
+			}
+
+			wrap.map(function() {
+				var elem = this;
+
+				while ( elem.firstChild && elem.firstChild.nodeType === 1 ) {
+					elem = elem.firstChild;
+				}
+
+				return elem;
+			}).append(this);
+		}
+
+		return this;
+	},
+
+	wrapInner: function( html ) {
+		if ( jQuery.isFunction( html ) ) {
+			return this.each(function(i) {
+				jQuery(this).wrapInner( html.call(this, i) );
+			});
+		}
+
+		return this.each(function() {
+			var self = jQuery( this ),
+				contents = self.contents();
+
+			if ( contents.length ) {
+				contents.wrapAll( html );
+
+			} else {
+				self.append( html );
+			}
+		});
+	},
+
+	wrap: function( html ) {
+		return this.each(function() {
+			jQuery( this ).wrapAll( html );
+		});
+	},
+
+	unwrap: function() {
+		return this.parent().each(function() {
+			if ( !jQuery.nodeName( this, "body" ) ) {
+				jQuery( this ).replaceWith( this.childNodes );
+			}
+		}).end();
+	},
+
+	append: function() {
+		return this.domManip(arguments, true, function( elem ) {
+			if ( this.nodeType === 1 ) {
+				this.appendChild( elem );
+			}
+		});
+	},
+
+	prepend: function() {
+		return this.domManip(arguments, true, function( elem ) {
+			if ( this.nodeType === 1 ) {
+				this.insertBefore( elem, this.firstChild );
+			}
+		});
+	},
+
+	before: function() {
+		if ( this[0] && this[0].parentNode ) {
+			return this.domManip(arguments, false, function( elem ) {
+				this.parentNode.insertBefore( elem, this );
+			});
+		} else if ( arguments.length ) {
+			var set = jQuery(arguments[0]);
+			set.push.apply( set, this.toArray() );
+			return this.pushStack( set, "before", arguments );
+		}
+	},
+
+	after: function() {
+		if ( this[0] && this[0].parentNode ) {
+			return this.domManip(arguments, false, function( elem ) {
+				this.parentNode.insertBefore( elem, this.nextSibling );
+			});
+		} else if ( arguments.length ) {
+			var set = this.pushStack( this, "after", arguments );
+			set.push.apply( set, jQuery(arguments[0]).toArray() );
+			return set;
+		}
+	},
+
+	// keepData is for internal use only--do not document
+	remove: function( selector, keepData ) {
+		for ( var i = 0, elem; (elem = this[i]) != null; i++ ) {
+			if ( !selector || jQuery.filter( selector, [ elem ] ).length ) {
+				if ( !keepData && elem.nodeType === 1 ) {
+					jQuery.cleanData( elem.getElementsByTagName("*") );
+					jQuery.cleanData( [ elem ] );
+				}
+
+				if ( elem.parentNode ) {
+					elem.parentNode.removeChild( elem );
+				}
+			}
+		}
+
+		return this;
+	},
+
+	empty: function() {
+		for ( var i = 0, elem; (elem = this[i]) != null; i++ ) {
+			// Remove element nodes and prevent memory leaks
+			if ( elem.nodeType === 1 ) {
+				jQuery.cleanData( elem.getElementsByTagName("*") );
+			}
+
+			// Remove any remaining nodes
+			while ( elem.firstChild ) {
+				elem.removeChild( elem.firstChild );
+			}
+		}
+
+		return this;
+	},
+
+	clone: function( dataAndEvents, deepDataAndEvents ) {
+		dataAndEvents = dataAndEvents == null ? false : dataAndEvents;
+		deepDataAndEvents = deepDataAndEvents == null ? dataAndEvents : deepDataAndEvents;
+
+		return this.map( function () {
+			return jQuery.clone( this, dataAndEvents, deepDataAndEvents );
+		});
+	},
+
+	html: function( value ) {
+		if ( value === undefined ) {
+			return this[0] && this[0].nodeType === 1 ?
+				this[0].innerHTML.replace(rinlinejQuery, "") :
+				null;
+
+		// See if we can take a shortcut and just use innerHTML
+		} else if ( typeof value === "string" && !rnocache.test( value ) &&
+			(jQuery.support.leadingWhitespace || !rleadingWhitespace.test( value )) &&
+			!wrapMap[ (rtagName.exec( value ) || ["", ""])[1].toLowerCase() ] ) {
+
+			value = value.replace(rxhtmlTag, "<$1></$2>");
+
+			try {
+				for ( var i = 0, l = this.length; i < l; i++ ) {
+					// Remove element nodes and prevent memory leaks
+					if ( this[i].nodeType === 1 ) {
+						jQuery.cleanData( this[i].getElementsByTagName("*") );
+						this[i].innerHTML = value;
+					}
+				}
+
+			// If using innerHTML throws an exception, use the fallback method
+			} catch(e) {
+				this.empty().append( value );
+			}
+
+		} else if ( jQuery.isFunction( value ) ) {
+			this.each(function(i){
+				var self = jQuery( this );
+
+				self.html( value.call(this, i, self.html()) );
+			});
+
+		} else {
+			this.empty().append( value );
+		}
+
+		return this;
+	},
+
+	replaceWith: function( value ) {
+		if ( this[0] && this[0].parentNode ) {
+			// Make sure that the elements are removed from the DOM before they are inserted
+			// this can help fix replacing a parent with child elements
+			if ( jQuery.isFunction( value ) ) {
+				return this.each(function(i) {
+					var self = jQuery(this), old = self.html();
+					self.replaceWith( value.call( this, i, old ) );
+				});
+			}
+
+			if ( typeof value !== "string" ) {
+				value = jQuery( value ).detach();
+			}
+
+			return this.each(function() {
+				var next = this.nextSibling,
+					parent = this.parentNode;
+
+				jQuery( this ).remove();
+
+				if ( next ) {
+					jQuery(next).before( value );
+				} else {
+					jQuery(parent).append( value );
+				}
+			});
+		} else {
+			return this.pushStack( jQuery(jQuery.isFunction(value) ? value() : value), "replaceWith", value );
+		}
+	},
+
+	detach: function( selector ) {
+		return this.remove( selector, true );
+	},
+
+	domManip: function( args, table, callback ) {
+		var results, first, fragment, parent,
+			value = args[0],
+			scripts = [];
+
+		// We can't cloneNode fragments that contain checked, in WebKit
+		if ( !jQuery.support.checkClone && arguments.length === 3 && typeof value === "string" && rchecked.test( value ) ) {
+			return this.each(function() {
+				jQuery(this).domManip( args, table, callback, true );
+			});
+		}
+
+		if ( jQuery.isFunction(value) ) {
+			return this.each(function(i) {
+				var self = jQuery(this);
+				args[0] = value.call(this, i, table ? self.html() : undefined);
+				self.domManip( args, table, callback );
+			});
+		}
+
+		if ( this[0] ) {
+			parent = value && value.parentNode;
+
+			// If we're in a fragment, just use that instead of building a new one
+			if ( jQuery.support.parentNode && parent && parent.nodeType === 11 && parent.childNodes.length === this.length ) {
+				results = { fragment: parent };
+
+			} else {
+				results = jQuery.buildFragment( args, this, scripts );
+			}
+
+			fragment = results.fragment;
+
+			if ( fragment.childNodes.length === 1 ) {
+				first = fragment = fragment.firstChild;
+			} else {
+				first = fragment.firstChild;
+			}
+
+			if ( first ) {
+				table = table && jQuery.nodeName( first, "tr" );
+
+				for ( var i = 0, l = this.length, lastIndex = l - 1; i < l; i++ ) {
+					callback.call(
+						table ?
+							root(this[i], first) :
+							this[i],
+						// Make sure that we do not leak memory by inadvertently discarding
+						// the original fragment (which might have attached data) instead of
+						// using it; in addition, use the original fragment object for the last
+						// item instead of first because it can end up being emptied incorrectly
+						// in certain situations (Bug #8070).
+						// Fragments from the fragment cache must always be cloned and never used
+						// in place.
+						results.cacheable || (l > 1 && i < lastIndex) ?
+							jQuery.clone( fragment, true, true ) :
+							fragment
+					);
+				}
+			}
+
+			if ( scripts.length ) {
+				jQuery.each( scripts, evalScript );
+			}
+		}
+
+		return this;
+	}
+});
+
+function root( elem, cur ) {
+	return jQuery.nodeName(elem, "table") ?
+		(elem.getElementsByTagName("tbody")[0] ||
+		elem.appendChild(elem.ownerDocument.createElement("tbody"))) :
+		elem;
+}
+
+function cloneCopyEvent( src, dest ) {
+
+	if ( dest.nodeType !== 1 || !jQuery.hasData( src ) ) {
+		return;
+	}
+
+	var internalKey = jQuery.expando,
+		oldData = jQuery.data( src ),
