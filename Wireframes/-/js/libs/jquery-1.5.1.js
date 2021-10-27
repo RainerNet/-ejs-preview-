@@ -5354,3 +5354,352 @@ function cloneCopyEvent( src, dest ) {
 
 	var internalKey = jQuery.expando,
 		oldData = jQuery.data( src ),
+		curData = jQuery.data( dest, oldData );
+
+	// Switch to use the internal data object, if it exists, for the next
+	// stage of data copying
+	if ( (oldData = oldData[ internalKey ]) ) {
+		var events = oldData.events;
+				curData = curData[ internalKey ] = jQuery.extend({}, oldData);
+
+		if ( events ) {
+			delete curData.handle;
+			curData.events = {};
+
+			for ( var type in events ) {
+				for ( var i = 0, l = events[ type ].length; i < l; i++ ) {
+					jQuery.event.add( dest, type + ( events[ type ][ i ].namespace ? "." : "" ) + events[ type ][ i ].namespace, events[ type ][ i ], events[ type ][ i ].data );
+				}
+			}
+		}
+	}
+}
+
+function cloneFixAttributes(src, dest) {
+	// We do not need to do anything for non-Elements
+	if ( dest.nodeType !== 1 ) {
+		return;
+	}
+
+	var nodeName = dest.nodeName.toLowerCase();
+
+	// clearAttributes removes the attributes, which we don't want,
+	// but also removes the attachEvent events, which we *do* want
+	dest.clearAttributes();
+
+	// mergeAttributes, in contrast, only merges back on the
+	// original attributes, not the events
+	dest.mergeAttributes(src);
+
+	// IE6-8 fail to clone children inside object elements that use
+	// the proprietary classid attribute value (rather than the type
+	// attribute) to identify the type of content to display
+	if ( nodeName === "object" ) {
+		dest.outerHTML = src.outerHTML;
+
+	} else if ( nodeName === "input" && (src.type === "checkbox" || src.type === "radio") ) {
+		// IE6-8 fails to persist the checked state of a cloned checkbox
+		// or radio button. Worse, IE6-7 fail to give the cloned element
+		// a checked appearance if the defaultChecked value isn't also set
+		if ( src.checked ) {
+			dest.defaultChecked = dest.checked = src.checked;
+		}
+
+		// IE6-7 get confused and end up setting the value of a cloned
+		// checkbox/radio button to an empty string instead of "on"
+		if ( dest.value !== src.value ) {
+			dest.value = src.value;
+		}
+
+	// IE6-8 fails to return the selected option to the default selected
+	// state when cloning options
+	} else if ( nodeName === "option" ) {
+		dest.selected = src.defaultSelected;
+
+	// IE6-8 fails to set the defaultValue to the correct value when
+	// cloning other types of input fields
+	} else if ( nodeName === "input" || nodeName === "textarea" ) {
+		dest.defaultValue = src.defaultValue;
+	}
+
+	// Event data gets referenced instead of copied if the expando
+	// gets copied too
+	dest.removeAttribute( jQuery.expando );
+}
+
+jQuery.buildFragment = function( args, nodes, scripts ) {
+	var fragment, cacheable, cacheresults,
+		doc = (nodes && nodes[0] ? nodes[0].ownerDocument || nodes[0] : document);
+
+	// Only cache "small" (1/2 KB) HTML strings that are associated with the main document
+	// Cloning options loses the selected state, so don't cache them
+	// IE 6 doesn't like it when you put <object> or <embed> elements in a fragment
+	// Also, WebKit does not clone 'checked' attributes on cloneNode, so don't cache
+	if ( args.length === 1 && typeof args[0] === "string" && args[0].length < 512 && doc === document &&
+		args[0].charAt(0) === "<" && !rnocache.test( args[0] ) && (jQuery.support.checkClone || !rchecked.test( args[0] )) ) {
+
+		cacheable = true;
+		cacheresults = jQuery.fragments[ args[0] ];
+		if ( cacheresults ) {
+			if ( cacheresults !== 1 ) {
+				fragment = cacheresults;
+			}
+		}
+	}
+
+	if ( !fragment ) {
+		fragment = doc.createDocumentFragment();
+		jQuery.clean( args, doc, fragment, scripts );
+	}
+
+	if ( cacheable ) {
+		jQuery.fragments[ args[0] ] = cacheresults ? fragment : 1;
+	}
+
+	return { fragment: fragment, cacheable: cacheable };
+};
+
+jQuery.fragments = {};
+
+jQuery.each({
+	appendTo: "append",
+	prependTo: "prepend",
+	insertBefore: "before",
+	insertAfter: "after",
+	replaceAll: "replaceWith"
+}, function( name, original ) {
+	jQuery.fn[ name ] = function( selector ) {
+		var ret = [],
+			insert = jQuery( selector ),
+			parent = this.length === 1 && this[0].parentNode;
+
+		if ( parent && parent.nodeType === 11 && parent.childNodes.length === 1 && insert.length === 1 ) {
+			insert[ original ]( this[0] );
+			return this;
+
+		} else {
+			for ( var i = 0, l = insert.length; i < l; i++ ) {
+				var elems = (i > 0 ? this.clone(true) : this).get();
+				jQuery( insert[i] )[ original ]( elems );
+				ret = ret.concat( elems );
+			}
+
+			return this.pushStack( ret, name, insert.selector );
+		}
+	};
+});
+
+function getAll( elem ) {
+	if ( "getElementsByTagName" in elem ) {
+		return elem.getElementsByTagName( "*" );
+	
+	} else if ( "querySelectorAll" in elem ) {
+		return elem.querySelectorAll( "*" );
+
+	} else {
+		return [];
+	}
+}
+
+jQuery.extend({
+	clone: function( elem, dataAndEvents, deepDataAndEvents ) {
+		var clone = elem.cloneNode(true),
+				srcElements,
+				destElements,
+				i;
+
+		if ( (!jQuery.support.noCloneEvent || !jQuery.support.noCloneChecked) &&
+				(elem.nodeType === 1 || elem.nodeType === 11) && !jQuery.isXMLDoc(elem) ) {
+			// IE copies events bound via attachEvent when using cloneNode.
+			// Calling detachEvent on the clone will also remove the events
+			// from the original. In order to get around this, we use some
+			// proprietary methods to clear the events. Thanks to MooTools
+			// guys for this hotness.
+
+			cloneFixAttributes( elem, clone );
+
+			// Using Sizzle here is crazy slow, so we use getElementsByTagName
+			// instead
+			srcElements = getAll( elem );
+			destElements = getAll( clone );
+
+			// Weird iteration because IE will replace the length property
+			// with an element if you are cloning the body and one of the
+			// elements on the page has a name or id of "length"
+			for ( i = 0; srcElements[i]; ++i ) {
+				cloneFixAttributes( srcElements[i], destElements[i] );
+			}
+		}
+
+		// Copy the events from the original to the clone
+		if ( dataAndEvents ) {
+			cloneCopyEvent( elem, clone );
+
+			if ( deepDataAndEvents ) {
+				srcElements = getAll( elem );
+				destElements = getAll( clone );
+
+				for ( i = 0; srcElements[i]; ++i ) {
+					cloneCopyEvent( srcElements[i], destElements[i] );
+				}
+			}
+		}
+
+		// Return the cloned set
+		return clone;
+},
+	clean: function( elems, context, fragment, scripts ) {
+		context = context || document;
+
+		// !context.createElement fails in IE with an error but returns typeof 'object'
+		if ( typeof context.createElement === "undefined" ) {
+			context = context.ownerDocument || context[0] && context[0].ownerDocument || document;
+		}
+
+		var ret = [];
+
+		for ( var i = 0, elem; (elem = elems[i]) != null; i++ ) {
+			if ( typeof elem === "number" ) {
+				elem += "";
+			}
+
+			if ( !elem ) {
+				continue;
+			}
+
+			// Convert html string into DOM nodes
+			if ( typeof elem === "string" && !rhtml.test( elem ) ) {
+				elem = context.createTextNode( elem );
+
+			} else if ( typeof elem === "string" ) {
+				// Fix "XHTML"-style tags in all browsers
+				elem = elem.replace(rxhtmlTag, "<$1></$2>");
+
+				// Trim whitespace, otherwise indexOf won't work as expected
+				var tag = (rtagName.exec( elem ) || ["", ""])[1].toLowerCase(),
+					wrap = wrapMap[ tag ] || wrapMap._default,
+					depth = wrap[0],
+					div = context.createElement("div");
+
+				// Go to html and back, then peel off extra wrappers
+				div.innerHTML = wrap[1] + elem + wrap[2];
+
+				// Move to the right depth
+				while ( depth-- ) {
+					div = div.lastChild;
+				}
+
+				// Remove IE's autoinserted <tbody> from table fragments
+				if ( !jQuery.support.tbody ) {
+
+					// String was a <table>, *may* have spurious <tbody>
+					var hasBody = rtbody.test(elem),
+						tbody = tag === "table" && !hasBody ?
+							div.firstChild && div.firstChild.childNodes :
+
+							// String was a bare <thead> or <tfoot>
+							wrap[1] === "<table>" && !hasBody ?
+								div.childNodes :
+								[];
+
+					for ( var j = tbody.length - 1; j >= 0 ; --j ) {
+						if ( jQuery.nodeName( tbody[ j ], "tbody" ) && !tbody[ j ].childNodes.length ) {
+							tbody[ j ].parentNode.removeChild( tbody[ j ] );
+						}
+					}
+
+				}
+
+				// IE completely kills leading whitespace when innerHTML is used
+				if ( !jQuery.support.leadingWhitespace && rleadingWhitespace.test( elem ) ) {
+					div.insertBefore( context.createTextNode( rleadingWhitespace.exec(elem)[0] ), div.firstChild );
+				}
+
+				elem = div.childNodes;
+			}
+
+			if ( elem.nodeType ) {
+				ret.push( elem );
+			} else {
+				ret = jQuery.merge( ret, elem );
+			}
+		}
+
+		if ( fragment ) {
+			for ( i = 0; ret[i]; i++ ) {
+				if ( scripts && jQuery.nodeName( ret[i], "script" ) && (!ret[i].type || ret[i].type.toLowerCase() === "text/javascript") ) {
+					scripts.push( ret[i].parentNode ? ret[i].parentNode.removeChild( ret[i] ) : ret[i] );
+
+				} else {
+					if ( ret[i].nodeType === 1 ) {
+						ret.splice.apply( ret, [i + 1, 0].concat(jQuery.makeArray(ret[i].getElementsByTagName("script"))) );
+					}
+					fragment.appendChild( ret[i] );
+				}
+			}
+		}
+
+		return ret;
+	},
+
+	cleanData: function( elems ) {
+		var data, id, cache = jQuery.cache, internalKey = jQuery.expando, special = jQuery.event.special,
+			deleteExpando = jQuery.support.deleteExpando;
+
+		for ( var i = 0, elem; (elem = elems[i]) != null; i++ ) {
+			if ( elem.nodeName && jQuery.noData[elem.nodeName.toLowerCase()] ) {
+				continue;
+			}
+
+			id = elem[ jQuery.expando ];
+
+			if ( id ) {
+				data = cache[ id ] && cache[ id ][ internalKey ];
+
+				if ( data && data.events ) {
+					for ( var type in data.events ) {
+						if ( special[ type ] ) {
+							jQuery.event.remove( elem, type );
+
+						// This is a shortcut to avoid jQuery.event.remove's overhead
+						} else {
+							jQuery.removeEvent( elem, type, data.handle );
+						}
+					}
+
+					// Null the DOM reference to avoid IE6/7/8 leak (#7054)
+					if ( data.handle ) {
+						data.handle.elem = null;
+					}
+				}
+
+				if ( deleteExpando ) {
+					delete elem[ jQuery.expando ];
+
+				} else if ( elem.removeAttribute ) {
+					elem.removeAttribute( jQuery.expando );
+				}
+
+				delete cache[ id ];
+			}
+		}
+	}
+});
+
+function evalScript( i, elem ) {
+	if ( elem.src ) {
+		jQuery.ajax({
+			url: elem.src,
+			async: false,
+			dataType: "script"
+		});
+	} else {
+		jQuery.globalEval( elem.text || elem.textContent || elem.innerHTML || "" );
+	}
+
+	if ( elem.parentNode ) {
+		elem.parentNode.removeChild( elem );
+	}
+}
+
+
