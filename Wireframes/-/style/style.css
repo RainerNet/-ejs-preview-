@@ -1,0 +1,126 @@
+
+
+/*		RESET  
+///////////////////////////////////////////////////////////////////////////////////////////////////////*/
+/*  Gen Reset 	*/	a, abbr, acronym, address, applet, article, aside, audio, b, blockquote, big, body, center, canvas, caption, cite, code, command, datalist, dd, del, details, dfn, dl, div, dt, em, embed, fieldset, figcaption, figure, font, footer, form,  h1, h2, h3, h4, h5, h6, header, hgroup, html, i, iframe, img, ins, kbd,  keygen, label, legend, li, meter, nav, object, ol, output, p, pre, progress, q,  s, samp, section, small, span, source, strike, strong, sub, sup, table, tbody, tfoot, thead, th, tr, tdvideo, tt, u, ul, var{ background: transparent; border: 0 none; font-size: 100%; margin: 0; padding: 0; outline: 0; vertical-align: baseline; }
+/*  HTML5 Block */	article, aside, audio, canvas, command, datalist, details, embed, figcaption, figure, footer, header, hgroup, keygen, meter, nav, output, progress, section, source, video{ display: block; }
+/*  HTML5 Inline*/	mark, rp, rt, ruby, summary, time{ display: inline }
+/*  Gen Text 	*/	p { font-size: 1em; margin: 0 0 1em 0; }  strong { font-weight: bold; }  em,dfn { font-style: italic; }  dfn{ font-weight: bold; }  small, .small{ font-size: .8em; }  .large{ font-size: 1.2em; }
+/*  Links 		*/	a:link { -webkit-tap-highlight-color: #DF851B; } a:hover, a:active { outline: none; }
+/*  Headings 	*/ 	h1, h2, h3, h4, h5, h6 { font-weight: normal; margin: 0; }  h1 a, h2 a, h3 a, h4 a, h5 a, h6 a, nav a{ text-decoration: none; }
+/*  Quotes 		*/	blockquote, q { quotes: none; } blockquote:before, blockquote:after, q:before, q:after { content: ''; content: none; }
+/*  Help Text 	*/	abbr[title], dfn[title],acronym[title] { border-bottom: 1px dotted; cursor: help; }
+/*  Code 		*/ 	pre, code, kbd, samp{ white-space: pre; white-space: pre-wrap; word-wrap: break-word; font-family: monospace, sans-serif;}
+/*  Sub/Sup 	*/	sub, sup { font-size: 75%; line-height: 0; position: relative; } sup { top: -0.5em; } sub { bottom: -0.25em; }
+/*  Text Edits 	*/	ins, .added { background-color: #ff9; color: #000; text-decoration: none; }  mark { background-color: #ff9; color: #000; font-style: italic; font-weight: bold; }  del, .removed { text-decoration: line-through; }
+/*  Lists 		*/	ul, ol { margin-left: 2em; }  ol { list-style-type: decimal; }  nav ul, nav li { margin: 0; list-style:none; list-style-image: none; }
+/* 	Tables		*/	table { border-collapse: collapse; border-spacing: 0; }  td { vertical-align: top; }  th { font-weight: bold; }  th,td,caption { border: 1px solid #ccc; padding: .4em; }
+/* 	Forms		*/	input, select { vertical-align: middle; }select, input, textarea, button{ margin: 0; }textarea { overflow: auto; }.ie6 legend, .ie7 legend { margin-left: -7px; } input[type="radio"]{ vertical-align: text-bottom; }input[type="checkbox"] { vertical-align: bottom; }.ie7 input[type="checkbox"]{ vertical-align: baseline; }.ie6 input { vertical-align: text-bottom; }label, button,input[type="button"], input[type="submit"], input[type="image"]{ cursor: pointer; width: auto; }label{ vertical-align:top; display: block; }input:invalid, textarea:invalid { border-radius: 1px; -moz-box-shadow: 0px 0px 5px red; -webkit-box-shadow: 0px 0px 5px red; box-shadow: 0px 0px 5px red; }.no-boxshadow input:invalid, .no-boxshadow textarea:invalid { background-color: #f0dddd; }::-moz-selection{ background: #DF851B; color:#fff; text-shadow: none; }::selection{ background:#DF851B; color:#fff; text-shadow: none; }
+/* 	Images	 	*/ 	img{ max-width: 100%; height: auto; } .ie7 img { -ms-interpolation-mode: bicubic; } a img { border: 0; outline 0; }
+/*  Clearfixin' */	.clearfix:before, .clearfix:after { content: "\0020"; display: block; height: 0; overflow: hidden; } .clearfix:after { clear: both; } .clearfix { zoom: 1; } br.clear{ clear:both; display:block; height:1px; margin:-1px 0 0 0 }
+
+
+/*		SITE DEFAULTS
+///////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+@font-face {
+    font-family: 'LeagueGothicRegular';
+    src: url('../fonts/League_Gothic-webfont.eot');
+    src: url('../fonts/League_Gothic-webfont.eot?#iefix') format('embedded-opentype'),
+         url('../fonts/League_Gothic-webfont.woff') format('woff'),
+         url('../fonts/League_Gothic-webfont.ttf') format('truetype'),
+         url('../fonts/League_Gothic-webfont.svg#LeagueGothicRegular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
+/*		Typography  
+---------------------------------------------------------------------------------------------------------------------------------------------------- */
+html{ font-size: 18.75px; line-height: 24px; }
+body{ font: normal normal 1em/1.6em Georgia, serif; color: #333; }
+
+p{ margin-bottom: 1em;  }
+blockquote{ margin-left: 1em; padding-left: .5em; font-style: italic; border-left: 2px solid #ccc; }
+blockquote:before{  }
+
+/* Headings
+---------------------------------------------------------------------------------------------------------------------------------------------------- */
+
+/* Default Headings */
+h1, h2, h3, 
+h4, h5, h6,
+.heading 	{ font-family: "LeagueGothicRegular"; text-transform: uppercase; letter-spacing: .1em; font-weight: normal;  }
+
+h1			{ font-size: 3em; }
+h2			{ font-size: 2em; }
+h3			{ font-size: 2em; text-transform: uppercase; letter-spacing: .1em; }
+h4, h5		{ font-size: 1.8em; font-style: italic; }
+h6			{ font-size: 2em; text-transform: uppercase; letter-spacing: .1em;  }
+
+
+/* Links 
+---------------------------------------------------------------------------------------------------------------------------------------------------- */
+a           { color: #DF851B; text-decoration: none; }
+a:focus, 
+a:hover     { color: #000; }
+a.active	{  }
+
+a[target="_blank"]:after{content: url('../images/link-dark-3.png');padding-left: 4px;}
+a.CTA[target="_blank"]:after{ content: ''; }
+
+a:link 		{ -webkit-tap-highlight-color: #DF851B; }
+
+/* Forms 
+---------------------------------------------------------------------------------------------------------------------------------------------------- */
+input,textarea		{ background: #fff; padding: .4em; width: 90%; border: 0; border-bottom: 1px solid #ddd; font: normal normal 1em/1.6em Baskerville, "Baskerville Old Face", Garamond, Palatino, "Palatino Linotype", "Hoefler Text", "Times New Roman", serif; }
+textarea	  		{ width: 90%; border: 1px solid #ddd; }
+input#submit		{ background: #222; color: #eee; padding: .5em .5em .3em .5em; }
+input#submit:hover	{ color: yellow; }
+input:valid, 
+textarea:valid   	{  }
+
+
+
+/*		BLOCKS
+///////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+.onethird{ 	width: 30%; margin-right: 3%; float: left; }
+.twothird{ 	width: 63%; margin-right: 3%; float: left;  }
+.half	{ 	width: 47%; margin-right: 3%; float: left;  }
+.last	{ 	margin-right: 0%; }
+.inside	{ margin: 10px; }
+
+/*		Page Structure & Style
+---------------------------------------------------------------------------------------------------------------------------------------------------- */
+html	{ background: #efefef; }
+body	{  }
+
+/* 	Header & Nav
+---------------------------------------------------------------------------------------------------------------------------------------------------- */
+header{ position: fixed; top: 0; height: 40px; line-height: 40px; width: 100%; background: #000; color: #fff; margin:0; }
+header h1{ width: 30%; margin:0 3% 0 0; font-size: 1.2em; float: left; text-indent: 10px; }
+header nav{ width: 30%; margin-right: 3%; float: left; text-align: center; }
+header nav li{ display: inline-block; width: 18%; }
+header #user{ width: 33%; float: left; text-align: right;  }
+
+
+/* 	Container
+---------------------------------------------------------------------------------------------------------------------------------------------------- */
+
+#container{ padding: 10px; max-width: 960px; margin: 40px auto 0; background: #fff; }
+
+/* Info */
+#fact img{ width: 30%; margin: 0 3% 3% 0; display: block; background: #999; height: 400px; float: left; }
+
+
+
+
+
+/* 	Footer
+---------------------------------------------------------------------------------------------------------------------------------------------------- */
+footer{ margin-top: 40px; padding-top: 10px; text-align: center; color: #ccc; }
+
+
+/*		PAGE SPECIFICS
+///////////////////////////////////////////////////////////////////////////////////////////////////////*/
