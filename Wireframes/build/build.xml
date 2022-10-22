@@ -1,0 +1,70 @@
+
+<?xml version="1.0"?>
+<project name="Boilerplate Build" default="build" basedir="../"> <!-- one back since we're in build/ -->
+
+
+    <!-- Load in Ant-Contrib to give us access to some very useful tasks! -->
+    <!-- the .jar file is located in the tools directory -->
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+        <classpath>
+            <pathelement location="${basedir}/build/tools/ant-contrib-1.0b3.jar"/>
+        </classpath>
+    </taskdef>
+
+    <!-- load shell environment -->
+    <property environment="ENV" />
+
+    <!-- load property files -->
+    <property file="build/config/project.properties"/>
+    <property file="build/config/default.properties"/>
+
+    <!-- merge the stylesheet properties -->
+    <var name="stylesheet-files" value="${file.stylesheets}, ${file.default.stylesheets}"/>
+    
+    <!-- merge the pages properties -->
+    <var name="page-files" value="${file.pages}, ${file.pages.default.include}"/>
+
+
+    
+    <!--
+    *************************************************
+    * BASE TARGETS                                  *
+    *************************************************
+    -->
+    <target name="basics">
+    <if>
+        <equals arg1="${env}" arg2="dev"/>
+        <then>
+            <!-- Build a dev environment -->
+            <echo message="Building a Development Environment..."/>
+            <antcall target="-basics.dev"/>
+        </then>
+
+        <elseif>
+            <equals arg1="${env}" arg2="test"/>
+            <then>
+                <!-- Build a test environment -->
+                <echo message="Building a Test Environment..."/>
+                <antcall target="-basics.test"/>
+            </then>
+        </elseif>
+
+        <else>
+            <!-- Build a production environment -->
+            <echo message="Building a Production Environment..."/>
+            <antcall target="-basics.production"/>
+        </else>
+    </if>
+    </target>
+
+
+    <target name="text">
+    <if>
+        <equals arg1="${env}" arg2="dev"/>
+        <then>
+            <!-- Build a dev environment -->
+            <echo message="Building a Development Environment..."/>
+            <antcall target="-text.dev"/>
+        </then>
+
+        <elseif>
