@@ -770,3 +770,48 @@
                 <available file="jpegtran" filepath="${ENV.PATH}" />
             </and>
             <then>
+                <apply executable="jpegtran" osfamily="unix">
+                    <fileset dir="${dir.source}/${dir.images}" includes="*.jpg"/>
+                    <arg value="-copy"/>
+                    <arg value="${strip-meta-tags}"/>
+                    <arg value="-optimize"/>
+                    <srcfile/>
+                    <redirector>
+                        <outputmapper type="glob" from="*.jpg" to="./${dir.publish}/${dir.images}/*.jpg"/>
+                    </redirector>
+                    <!-- you may want to flag optimized images. If so, do it here. Otherwise change this to type="identity" -->
+                </apply>
+            </then>
+            <elseif>
+                <os family="unix" />
+                <then>
+                    <echo message="*** jpegtran NOT INSTALLED. SKIPPING OPTIMIZATION OF JPEGs." />
+                    <echo message="*** Install jpegtran to enable jpeg optimization." />
+                    <echo message="*** For instructions see 'Dependencies' at: http://html5boilerplate.com/docs/#Build-script#dependencies" />
+                </then>
+            </elseif>
+        </if>
+
+        <apply executable="tools/jpegtran.exe" osfamily="windows">
+            <fileset dir="${dir.source}/${dir.images}" includes="*.jpg"/>
+            <arg value="-copy"/>
+            <arg value="${strip-meta-tags}"/>
+            <arg value="-optimize"/>
+            <srcfile/>
+            <targetfile/>
+            <!-- you may want to flag optimized images. If so, do it here. Otherwise change this to type="identity" -->
+            <mapper type="glob" from="*.jpg" to="../${dir.publish}/${dir.images}/*.jpg"/>
+        </apply>
+    </target>
+
+    
+    <target name="-jpgcopy">
+        <echo message="Copying over the unmodified jpegs."/>
+        
+        <copy todir="./${dir.publish}/${dir.images}">
+            <fileset dir="${dir.source}/${dir.images}"  includes="*.jpg"/>
+        </copy> 
+    </target>
+
+    
+</project>
