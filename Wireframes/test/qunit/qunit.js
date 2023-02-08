@@ -257,3 +257,347 @@ var QUnit = {
 	 *
 	 * Prefered to ok( actual == expected, message )
 	 *
+	 * @example equal( format("Received {0} bytes.", 2), "Received 2 bytes." );
+	 *
+	 * @param Object actual
+	 * @param Object expected
+	 * @param String message (optional)
+	 */
+	equal: function(actual, expected, message) {
+		push(expected == actual, actual, expected, message);
+	},
+
+	notEqual: function(actual, expected, message) {
+		push(expected != actual, actual, expected, message);
+	},
+	
+	deepEqual: function(actual, expected, message) {
+		push(QUnit.equiv(actual, expected), actual, expected, message);
+	},
+
+	notDeepEqual: function(actual, expected, message) {
+		push(!QUnit.equiv(actual, expected), actual, expected, message);
+	},
+
+	strictEqual: function(actual, expected, message) {
+		push(expected === actual, actual, expected, message);
+	},
+
+	notStrictEqual: function(actual, expected, message) {
+		push(expected !== actual, actual, expected, message);
+	},
+
+	raises: function(fn,  message) {
+		try {
+			fn();
+			ok( false, message );
+		}
+		catch (e) {
+			ok( true, message );
+		}
+	},
+
+	start: function() {
+		// A slight delay, to avoid any current callbacks
+		if ( window.setTimeout ) {
+			window.setTimeout(function() {
+				if ( config.timeout ) {
+					clearTimeout(config.timeout);
+				}
+
+				config.blocking = false;
+				process();
+			}, 13);
+		} else {
+			config.blocking = false;
+			process();
+		}
+	},
+	
+	stop: function(timeout) {
+		config.blocking = true;
+
+		if ( timeout && window.setTimeout ) {
+			config.timeout = window.setTimeout(function() {
+				QUnit.ok( false, "Test timed out" );
+				QUnit.start();
+			}, timeout);
+		}
+	}
+
+};
+
+// Backwards compatibility, deprecated
+QUnit.equals = QUnit.equal;
+QUnit.same = QUnit.deepEqual;
+
+// Maintain internal state
+var config = {
+	// The queue of tests to run
+	queue: [],
+
+	// block until document ready
+	blocking: true
+};
+
+// Load paramaters
+(function() {
+	var location = window.location || { search: "", protocol: "file:" },
+		GETParams = location.search.slice(1).split('&');
+
+	for ( var i = 0; i < GETParams.length; i++ ) {
+		GETParams[i] = decodeURIComponent( GETParams[i] );
+		if ( GETParams[i] === "noglobals" ) {
+			GETParams.splice( i, 1 );
+			i--;
+			config.noglobals = true;
+		} else if ( GETParams[i].search('=') > -1 ) {
+			GETParams.splice( i, 1 );
+			i--;
+		}
+	}
+	
+	// restrict modules/tests by get parameters
+	config.filters = GETParams;
+	
+	// Figure out if we're running the tests from a server or not
+	QUnit.isLocal = !!(location.protocol === 'file:');
+})();
+
+// Expose the API as global variables, unless an 'exports'
+// object exists, in that case we assume we're in CommonJS
+if ( typeof exports === "undefined" || typeof require === "undefined" ) {
+	extend(window, QUnit);
+	window.QUnit = QUnit;
+} else {
+	extend(exports, QUnit);
+	exports.QUnit = QUnit;
+}
+
+// define these after exposing globals to keep them in these QUnit namespace only
+extend(QUnit, {
+	config: config,
+
+	// Initialize the configuration options
+	init: function() {
+		extend(config, {
+			stats: { all: 0, bad: 0 },
+			moduleStats: { all: 0, bad: 0 },
+			started: +new Date,
+			updateRate: 1000,
+			blocking: false,
+			autostart: true,
+			autorun: false,
+			assertions: [],
+			filters: [],
+			queue: []
+		});
+
+		var tests = id("qunit-tests"),
+			banner = id("qunit-banner"),
+			result = id("qunit-testresult");
+
+		if ( tests ) {
+			tests.innerHTML = "";
+		}
+
+		if ( banner ) {
+			banner.className = "";
+		}
+
+		if ( result ) {
+			result.parentNode.removeChild( result );
+		}
+	},
+	
+	/**
+	 * Resets the test setup. Useful for tests that modify the DOM.
+	 */
+	reset: function() {
+		if ( window.jQuery ) {
+			jQuery("#main, #qunit-fixture").html( config.fixture );
+		}
+	},
+	
+	/**
+	 * Trigger an event on an element.
+	 *
+	 * @example triggerEvent( document.body, "click" );
+	 *
+	 * @param DOMElement elem
+	 * @param String type
+	 */
+	triggerEvent: function( elem, type, event ) {
+		if ( document.createEvent ) {
+			event = document.createEvent("MouseEvents");
+			event.initMouseEvent(type, true, true, elem.ownerDocument.defaultView,
+				0, 0, 0, 0, 0, false, false, false, false, 0, null);
+			elem.dispatchEvent( event );
+
+		} else if ( elem.fireEvent ) {
+			elem.fireEvent("on"+type);
+		}
+	},
+	
+	// Safe object type checking
+	is: function( type, obj ) {
+		return QUnit.objectType( obj ) == type;
+	},
+	
+	objectType: function( obj ) {
+		if (typeof obj === "undefined") {
+				return "undefined";
+
+		// consider: typeof null === object
+		}
+		if (obj === null) {
+				return "null";
+		}
+
+		var type = Object.prototype.toString.call( obj )
+			.match(/^\[object\s(.*)\]$/)[1] || '';
+
+		switch (type) {
+				case 'Number':
+						if (isNaN(obj)) {
+								return "nan";
+						} else {
+								return "number";
+						}
+				case 'String':
+				case 'Boolean':
+				case 'Array':
+				case 'Date':
+				case 'RegExp':
+				case 'Function':
+						return type.toLowerCase();
+		}
+		if (typeof obj === "object") {
+				return "object";
+		}
+		return undefined;
+	},
+	
+	// Logging callbacks
+	begin: function() {},
+	done: function(failures, total) {},
+	log: function(result, message) {},
+	testStart: function(name, testEnvironment) {},
+	testDone: function(name, failures, total) {},
+	moduleStart: function(name, testEnvironment) {},
+	moduleDone: function(name, failures, total) {}
+});
+
+if ( typeof document === "undefined" || document.readyState === "complete" ) {
+	config.autorun = true;
+}
+
+addEvent(window, "load", function() {
+	QUnit.begin();
+	
+	// Initialize the config, saving the execution queue
+	var oldconfig = extend({}, config);
+	QUnit.init();
+	extend(config, oldconfig);
+
+	config.blocking = false;
+
+	var userAgent = id("qunit-userAgent");
+	if ( userAgent ) {
+		userAgent.innerHTML = navigator.userAgent;
+	}
+	
+	var toolbar = id("qunit-testrunner-toolbar");
+	if ( toolbar ) {
+		toolbar.style.display = "none";
+		
+		var filter = document.createElement("input");
+		filter.type = "checkbox";
+		filter.id = "qunit-filter-pass";
+		filter.disabled = true;
+		addEvent( filter, "click", function() {
+			var li = document.getElementsByTagName("li");
+			for ( var i = 0; i < li.length; i++ ) {
+				if ( li[i].className.indexOf("pass") > -1 ) {
+					li[i].style.display = filter.checked ? "none" : "";
+				}
+			}
+		});
+		toolbar.appendChild( filter );
+
+		var label = document.createElement("label");
+		label.setAttribute("for", "qunit-filter-pass");
+		label.innerHTML = "Hide passed tests";
+		toolbar.appendChild( label );
+
+		var missing = document.createElement("input");
+		missing.type = "checkbox";
+		missing.id = "qunit-filter-missing";
+		missing.disabled = true;
+		addEvent( missing, "click", function() {
+			var li = document.getElementsByTagName("li");
+			for ( var i = 0; i < li.length; i++ ) {
+				if ( li[i].className.indexOf("fail") > -1 && li[i].innerHTML.indexOf('missing test - untested code is broken code') > - 1 ) {
+					li[i].parentNode.parentNode.style.display = missing.checked ? "none" : "block";
+				}
+			}
+		});
+		toolbar.appendChild( missing );
+
+		label = document.createElement("label");
+		label.setAttribute("for", "qunit-filter-missing");
+		label.innerHTML = "Hide missing tests (untested code is broken code)";
+		toolbar.appendChild( label );
+	}
+
+	var main = id('main') || id('qunit-fixture');
+	if ( main ) {
+		config.fixture = main.innerHTML;
+	}
+
+	if (config.autostart) {
+		QUnit.start();
+	}
+});
+
+function done() {
+	if ( config.doneTimer && window.clearTimeout ) {
+		window.clearTimeout( config.doneTimer );
+		config.doneTimer = null;
+	}
+
+	if ( config.queue.length ) {
+		config.doneTimer = window.setTimeout(function(){
+			if ( !config.queue.length ) {
+				done();
+			} else {
+				synchronize( done );
+			}
+		}, 13);
+
+		return;
+	}
+
+	config.autorun = true;
+
+	// Log the last module results
+	if ( config.currentModule ) {
+		QUnit.moduleDone( config.currentModule, config.moduleStats.bad, config.moduleStats.all );
+	}
+
+	var banner = id("qunit-banner"),
+		tests = id("qunit-tests"),
+		html = ['Tests completed in ',
+		+new Date - config.started, ' milliseconds.<br/>',
+		'<span class="passed">', config.stats.all - config.stats.bad, '</span> tests of <span class="total">', config.stats.all, '</span> passed, <span class="failed">', config.stats.bad,'</span> failed.'].join('');
+
+	if ( banner ) {
+		banner.className = (config.stats.bad ? "qunit-fail" : "qunit-pass");
+	}
+
+	if ( tests ) {	
+		var result = id("qunit-testresult");
+
+		if ( !result ) {
+			result = document.createElement("p");
+			result.id = "qunit-testresult";
