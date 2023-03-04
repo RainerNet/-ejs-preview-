@@ -947,3 +947,320 @@ QUnit.equiv = function () {
 QUnit.jsDump = (function() {
 	function quote( str ) {
 		return '"' + str.toString().replace(/"/g, '\\"') + '"';
+	};
+	function literal( o ) {
+		return o + '';	
+	};
+	function join( pre, arr, post ) {
+		var s = jsDump.separator(),
+			base = jsDump.indent(),
+			inner = jsDump.indent(1);
+		if ( arr.join )
+			arr = arr.join( ',' + s + inner );
+		if ( !arr )
+			return pre + post;
+		return [ pre, inner + arr, base + post ].join(s);
+	};
+	function array( arr ) {
+		var i = arr.length,	ret = Array(i);					
+		this.up();
+		while ( i-- )
+			ret[i] = this.parse( arr[i] );				
+		this.down();
+		return join( '[', ret, ']' );
+	};
+	
+	var reName = /^function (\w+)/;
+	
+	var jsDump = {
+		parse:function( obj, type ) { //type is used mostly internally, you can fix a (custom)type in advance
+			var	parser = this.parsers[ type || this.typeOf(obj) ];
+			type = typeof parser;			
+			
+			return type == 'function' ? parser.call( this, obj ) :
+				   type == 'string' ? parser :
+				   this.parsers.error;
+		},
+		typeOf:function( obj ) {
+			var type;
+			if ( obj === null ) {
+				type = "null";
+			} else if (typeof obj === "undefined") {
+				type = "undefined";
+			} else if (QUnit.is("RegExp", obj)) {
+				type = "regexp";
+			} else if (QUnit.is("Date", obj)) {
+				type = "date";
+			} else if (QUnit.is("Function", obj)) {
+				type = "function";
+			} else if (obj.setInterval && obj.document && !obj.nodeType) {
+				type = "window";
+			} else if (obj.nodeType === 9) {
+				type = "document";
+			} else if (obj.nodeType) {
+				type = "node";
+			} else if (typeof obj === "object" && typeof obj.length === "number" && obj.length >= 0) {
+				type = "array";
+			} else {
+				type = typeof obj;
+			}
+			return type;
+		},
+		separator:function() {
+			return this.multiline ?	this.HTML ? '<br />' : '\n' : this.HTML ? '&nbsp;' : ' ';
+		},
+		indent:function( extra ) {// extra can be a number, shortcut for increasing-calling-decreasing
+			if ( !this.multiline )
+				return '';
+			var chr = this.indentChar;
+			if ( this.HTML )
+				chr = chr.replace(/\t/g,'   ').replace(/ /g,'&nbsp;');
+			return Array( this._depth_ + (extra||0) ).join(chr);
+		},
+		up:function( a ) {
+			this._depth_ += a || 1;
+		},
+		down:function( a ) {
+			this._depth_ -= a || 1;
+		},
+		setParser:function( name, parser ) {
+			this.parsers[name] = parser;
+		},
+		// The next 3 are exposed so you can use them
+		quote:quote, 
+		literal:literal,
+		join:join,
+		//
+		_depth_: 1,
+		// This is the list of parsers, to modify them, use jsDump.setParser
+		parsers:{
+			window: '[Window]',
+			document: '[Document]',
+			error:'[ERROR]', //when no parser is found, shouldn't happen
+			unknown: '[Unknown]',
+			'null':'null',
+			undefined:'undefined',
+			'function':function( fn ) {
+				var ret = 'function',
+					name = 'name' in fn ? fn.name : (reName.exec(fn)||[])[1];//functions never have name in IE
+				if ( name )
+					ret += ' ' + name;
+				ret += '(';
+				
+				ret = [ ret, this.parse( fn, 'functionArgs' ), '){'].join('');
+				return join( ret, this.parse(fn,'functionCode'), '}' );
+			},
+			array: array,
+			nodelist: array,
+			arguments: array,
+			object:function( map ) {
+				var ret = [ ];
+				this.up();
+				for ( var key in map )
+					ret.push( this.parse(key,'key') + ': ' + this.parse(map[key]) );
+				this.down();
+				return join( '{', ret, '}' );
+			},
+			node:function( node ) {
+				var open = this.HTML ? '&lt;' : '<',
+					close = this.HTML ? '&gt;' : '>';
+					
+				var tag = node.nodeName.toLowerCase(),
+					ret = open + tag;
+					
+				for ( var a in this.DOMAttrs ) {
+					var val = node[this.DOMAttrs[a]];
+					if ( val )
+						ret += ' ' + a + '=' + this.parse( val, 'attribute' );
+				}
+				return ret + close + open + '/' + tag + close;
+			},
+			functionArgs:function( fn ) {//function calls it internally, it's the arguments part of the function
+				var l = fn.length;
+				if ( !l ) return '';				
+				
+				var args = Array(l);
+				while ( l-- )
+					args[l] = String.fromCharCode(97+l);//97 is 'a'
+				return ' ' + args.join(', ') + ' ';
+			},
+			key:quote, //object calls it internally, the key part of an item in a map
+			functionCode:'[code]', //function calls it internally, it's the content of the function
+			attribute:quote, //node calls it internally, it's an html attribute value
+			string:quote,
+			date:quote,
+			regexp:literal, //regex
+			number:literal,
+			'boolean':literal
+		},
+		DOMAttrs:{//attributes to dump from nodes, name=>realName
+			id:'id',
+			name:'name',
+			'class':'className'
+		},
+		HTML:false,//if true, entities are escaped ( <, >, \t, space and \n )
+		indentChar:'   ',//indentation unit
+		multiline:false //if true, items in a collection, are separated by a \n, else just a space.
+	};
+
+	return jsDump;
+})();
+
+// from Sizzle.js
+function getText( elems ) {
+	var ret = "", elem;
+
+	for ( var i = 0; elems[i]; i++ ) {
+		elem = elems[i];
+
+		// Get the text from text nodes and CDATA nodes
+		if ( elem.nodeType === 3 || elem.nodeType === 4 ) {
+			ret += elem.nodeValue;
+
+		// Traverse everything else, except comment nodes
+		} else if ( elem.nodeType !== 8 ) {
+			ret += getText( elem.childNodes );
+		}
+	}
+
+	return ret;
+};
+
+/*
+ * Javascript Diff Algorithm
+ *  By John Resig (http://ejohn.org/)
+ *  Modified by Chu Alan "sprite"
+ *
+ * Released under the MIT license.
+ *
+ * More Info:
+ *  http://ejohn.org/projects/javascript-diff-algorithm/
+ *  
+ * Usage: QUnit.diff(expected, actual)
+ * 
+ * QUnit.diff("the quick brown fox jumped over", "the quick fox jumps over") == "the  quick <del>brown </del> fox <del>jumped </del><ins>jumps </ins> over"
+ */
+QUnit.diff = (function() {
+	function diff(o, n){
+		var ns = new Object();
+		var os = new Object();
+		
+		for (var i = 0; i < n.length; i++) {
+			if (ns[n[i]] == null) 
+				ns[n[i]] = {
+					rows: new Array(),
+					o: null
+				};
+			ns[n[i]].rows.push(i);
+		}
+		
+		for (var i = 0; i < o.length; i++) {
+			if (os[o[i]] == null) 
+				os[o[i]] = {
+					rows: new Array(),
+					n: null
+				};
+			os[o[i]].rows.push(i);
+		}
+		
+		for (var i in ns) {
+			if (ns[i].rows.length == 1 && typeof(os[i]) != "undefined" && os[i].rows.length == 1) {
+				n[ns[i].rows[0]] = {
+					text: n[ns[i].rows[0]],
+					row: os[i].rows[0]
+				};
+				o[os[i].rows[0]] = {
+					text: o[os[i].rows[0]],
+					row: ns[i].rows[0]
+				};
+			}
+		}
+		
+		for (var i = 0; i < n.length - 1; i++) {
+			if (n[i].text != null && n[i + 1].text == null && n[i].row + 1 < o.length && o[n[i].row + 1].text == null &&
+			n[i + 1] == o[n[i].row + 1]) {
+				n[i + 1] = {
+					text: n[i + 1],
+					row: n[i].row + 1
+				};
+				o[n[i].row + 1] = {
+					text: o[n[i].row + 1],
+					row: i + 1
+				};
+			}
+		}
+		
+		for (var i = n.length - 1; i > 0; i--) {
+			if (n[i].text != null && n[i - 1].text == null && n[i].row > 0 && o[n[i].row - 1].text == null &&
+			n[i - 1] == o[n[i].row - 1]) {
+				n[i - 1] = {
+					text: n[i - 1],
+					row: n[i].row - 1
+				};
+				o[n[i].row - 1] = {
+					text: o[n[i].row - 1],
+					row: i - 1
+				};
+			}
+		}
+		
+		return {
+			o: o,
+			n: n
+		};
+	}
+	
+	return function(o, n){
+		o = o.replace(/\s+$/, '');
+		n = n.replace(/\s+$/, '');
+		var out = diff(o == "" ? [] : o.split(/\s+/), n == "" ? [] : n.split(/\s+/));
+
+		var str = "";
+		
+		var oSpace = o.match(/\s+/g);
+		if (oSpace == null) {
+			oSpace = [" "];
+		}
+		else {
+			oSpace.push(" ");
+		}
+		var nSpace = n.match(/\s+/g);
+		if (nSpace == null) {
+			nSpace = [" "];
+		}
+		else {
+			nSpace.push(" ");
+		}
+		
+		if (out.n.length == 0) {
+			for (var i = 0; i < out.o.length; i++) {
+				str += '<del>' + out.o[i] + oSpace[i] + "</del>";
+			}
+		}
+		else {
+			if (out.n[0].text == null) {
+				for (n = 0; n < out.o.length && out.o[n].text == null; n++) {
+					str += '<del>' + out.o[n] + oSpace[n] + "</del>";
+				}
+			}
+			
+			for (var i = 0; i < out.n.length; i++) {
+				if (out.n[i].text == null) {
+					str += '<ins>' + out.n[i] + nSpace[i] + "</ins>";
+				}
+				else {
+					var pre = "";
+					
+					for (n = out.n[i].row + 1; n < out.o.length && out.o[n].text == null; n++) {
+						pre += '<del>' + out.o[n] + oSpace[n] + "</del>";
+					}
+					str += " " + out.n[i].text + nSpace[i] + pre;
+				}
+			}
+		}
+		
+		return str;
+	}
+})();
+
+})(this);
